@@ -44,17 +44,20 @@ static PyObject *t_fp_seq_get(t_fp *self, Py_ssize_t n);
 static int t_fp_seq_contains(t_fp *self, PyObject *value);
 static PyObject *t_fp_seq_concat(t_fp *self, PyObject *arg);
 static PyObject *t_fp_seq_repeat(t_fp *self, Py_ssize_t n);
+/*
 static PyObject *t_fp_seq_getslice(t_fp *self, Py_ssize_t low, Py_ssize_t high);
+*/
 static int t_fp_seq_set(t_fp *self, Py_ssize_t i, PyObject *value);
+/*
 static int t_fp_seq_setslice(t_fp *self, Py_ssize_t low,
                              Py_ssize_t high, PyObject *arg);
+*/
 static PyObject *t_fp_seq_inplace_concat(t_fp *self, PyObject *arg);
 static PyObject *t_fp_seq_inplace_repeat(t_fp *self, Py_ssize_t n);
 
 
 PyTypeObject PY_TYPE(FinalizerClass) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "jcc.FinalizerClass",                /* tp_name */
     PyType_Type.tp_basicsize,            /* tp_basicsize */
     0,                                   /* tp_itemsize */
@@ -62,7 +65,7 @@ PyTypeObject PY_TYPE(FinalizerClass) = {
     0,                                   /* tp_print */
     0,                                   /* tp_getattr */
     0,                                   /* tp_setattr */
-    0,                                   /* tp_compare */
+    0,                                   /* tp_reserved */
     0,                                   /* tp_repr */
     0,                                   /* tp_as_number */
     0,                                   /* tp_as_sequence */
@@ -105,17 +108,16 @@ static PySequenceMethods t_fp_as_sequence = {
     (binaryfunc)t_fp_seq_concat,              /* sq_concat */
     (ssizeargfunc)t_fp_seq_repeat,            /* sq_repeat */
     (ssizeargfunc)t_fp_seq_get,               /* sq_item */
-    (ssizessizeargfunc)t_fp_seq_getslice,     /* sq_slice */
+    0,                                        /* was_sq_slice */
     (ssizeobjargproc)t_fp_seq_set,            /* sq_ass_item */
-    (ssizessizeobjargproc)t_fp_seq_setslice,  /* sq_ass_slice */
+    0,                                        /* was_sq_ass_slice */
     (objobjproc)t_fp_seq_contains,            /* sq_contains */
     (binaryfunc)t_fp_seq_inplace_concat,      /* sq_inplace_concat */
     (ssizeargfunc)t_fp_seq_inplace_repeat,    /* sq_inplace_repeat */
 };
 
 PyTypeObject PY_TYPE(FinalizerProxy) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "jcc.FinalizerProxy",                /* tp_name */
     sizeof(t_fp),                        /* tp_basicsize */
     0,                                   /* tp_itemsize */
@@ -123,7 +125,7 @@ PyTypeObject PY_TYPE(FinalizerProxy) = {
     0,                                   /* tp_print */
     0,                                   /* tp_getattr */
     0,                                   /* tp_setattr */
-    0,                                   /* tp_compare */
+    0,                                   /* tp_reserved */
     (reprfunc)t_fp_repr,                 /* tp_repr */
     0,                                   /* tp_as_number */
     &t_fp_as_sequence,                   /* tp_as_sequence */
@@ -177,7 +179,7 @@ static void t_fp_dealloc(t_fp *self)
         ((t_JObject *) self->object)->object.weaken$();
 
     t_fp_clear(self);
-    self->ob_type->tp_free((PyObject *) self);
+    self->ob_base.ob_type->tp_free((PyObject *) self);
 }
 
 static int t_fp_traverse(t_fp *self, visitproc visit, void *arg)
@@ -255,21 +257,25 @@ static PyObject *t_fp_seq_repeat(t_fp *self, Py_ssize_t n)
     return PySequence_Repeat(self->object, n);
 }
 
+/*
 static PyObject *t_fp_seq_getslice(t_fp *self, Py_ssize_t low, Py_ssize_t high)
 {
     return PySequence_GetSlice(self->object, low, high);
 }
+*/
 
 static int t_fp_seq_set(t_fp *self, Py_ssize_t i, PyObject *value)
 {
     return PySequence_SetItem(self->object, i, value);
 }
 
+/*
 static int t_fp_seq_setslice(t_fp *self, Py_ssize_t low,
                              Py_ssize_t high, PyObject *arg)
 {
     return PySequence_SetSlice(self->object, low, high, arg);
 }
+*/
 
 static PyObject *t_fp_seq_inplace_concat(t_fp *self, PyObject *arg)
 {
@@ -309,8 +315,7 @@ static PyMethodDef t_descriptor_methods[] = {
 
 
 PyTypeObject PY_TYPE(ConstVariableDescriptor) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "jcc.ConstVariableDescriptor",       /* tp_name */
     sizeof(t_descriptor),                /* tp_basicsize */
     0,                                   /* tp_itemsize */
@@ -318,7 +323,7 @@ PyTypeObject PY_TYPE(ConstVariableDescriptor) = {
     0,                                   /* tp_print */
     0,                                   /* tp_getattr */
     0,                                   /* tp_setattr */
-    0,                                   /* tp_compare */
+    0,                                   /* tp_reserved */
     0,                                   /* tp_repr */
     0,                                   /* tp_as_number */
     0,                                   /* tp_as_sequence */
@@ -356,7 +361,7 @@ static void t_descriptor_dealloc(t_descriptor *self)
     {
         Py_DECREF(self->access.value);
     }
-    self->ob_type->tp_free((PyObject *) self);
+    self->ob_base.ob_type->tp_free((PyObject *) self);
 }
 
 PyObject *make_descriptor(PyTypeObject *value)
@@ -446,7 +451,7 @@ PyObject *make_descriptor(jbyte value)
 
     if (self)
     {
-        self->access.value = PyInt_FromLong(value);
+        self->access.value = PyLong_FromLong(value);
         self->flags = DESCRIPTOR_VALUE;
     }
 
@@ -504,7 +509,7 @@ PyObject *make_descriptor(jint value)
 
     if (self)
     {
-        self->access.value = PyInt_FromLong(value);
+        self->access.value = PyLong_FromLong(value);
         self->flags = DESCRIPTOR_VALUE;
     }
 
@@ -532,7 +537,7 @@ PyObject *make_descriptor(jshort value)
 
     if (self)
     {
-        self->access.value = PyInt_FromLong((short) value);
+        self->access.value = PyLong_FromLong((short) value);
         self->flags = DESCRIPTOR_VALUE;
     }
 

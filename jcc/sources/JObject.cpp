@@ -50,8 +50,7 @@ static PyGetSetDef t_JObject_properties[] = {
 };
 
 PyTypeObject PY_TYPE(JObject) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "jcc.JObject",                       /* tp_name */
     sizeof(t_JObject),                   /* tp_basicsize */
     0,                                   /* tp_itemsize */
@@ -59,7 +58,7 @@ PyTypeObject PY_TYPE(JObject) = {
     0,                                   /* tp_print */
     0,                                   /* tp_getattr */
     0,                                   /* tp_setattr */
-    0,                                   /* tp_compare */
+    0,                                   /* tp_reserved */
     (reprfunc)t_JObject_repr,            /* tp_repr */
     0,                                   /* tp_as_number */
     0,                                   /* tp_as_sequence */
@@ -96,7 +95,7 @@ PyTypeObject PY_TYPE(JObject) = {
 static void t_JObject_dealloc(t_JObject *self)
 {
     self->object = JObject(NULL);
-    self->ob_type->tp_free((PyObject *) self);
+    self->ob_base.ob_type->tp_free((PyObject *) self);
 }
 
 static PyObject *t_JObject_new(PyTypeObject *type,
@@ -149,21 +148,21 @@ static PyObject *t_JObject_str(t_JObject *self)
         return unicode;
     }
 
-    return PyString_FromString("<null>");
+    return PyUnicode_FromString("<null>");
 }
 
 static PyObject *t_JObject_repr(t_JObject *self)
 {
-    PyObject *name = PyObject_GetAttrString((PyObject *) self->ob_type,
+    PyObject *name = PyObject_GetAttrString((PyObject *) self->ob_base.ob_type,
                                             "__name__");
-    PyObject *str = self->ob_type->tp_str((PyObject *) self);
+    PyObject *str = self->ob_base.ob_type->tp_str((PyObject *) self);
 #if PY_VERSION_HEX < 0x02040000
     PyObject *args = Py_BuildValue("(OO)", name, str);
 #else
     PyObject *args = PyTuple_Pack(2, name, str);
 #endif
-    PyObject *format = PyString_FromString("<%s: %s>");
-    PyObject *repr = PyString_Format(format, args);
+    PyObject *format = PyUnicode_FromString("<%s: %s>");
+    PyObject *repr = PyUnicode_Format(format, args);
 
     Py_DECREF(name);
     Py_DECREF(str);

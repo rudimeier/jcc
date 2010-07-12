@@ -2,7 +2,7 @@
 import sys
 
 if sys.platform == 'win32' and '--find-jvm-dll' in sys.argv:
-    from windows import add_jvm_dll_directory_to_path
+    from .windows import add_jvm_dll_directory_to_path
     add_jvm_dll_directory_to_path()
 
 from jcc import cpp
@@ -96,7 +96,7 @@ if len(sys.argv) == 1 or '--help' in sys.argv:
     --prefix PREFIX
     --home HOMEDIR
 '''
-    print help
+    print(help)
     sys.exit(0)
   
 cpp.jcc(sys.argv)

@@ -68,8 +68,7 @@
 #define DECLARE_TYPE(name, t_name, base, javaClass,                         \
                      init, iter, iternext, getset, mapping, sequence)       \
 PyTypeObject PY_TYPE(name) = {                                              \
-    PyObject_HEAD_INIT(NULL)                                                \
-    /* ob_size            */   0,                                           \
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)                                  \
     /* tp_name            */   #name,                                       \
     /* tp_basicsize       */   sizeof(t_name),                              \
     /* tp_itemsize        */   0,                                           \
@@ -77,7 +76,7 @@ PyTypeObject PY_TYPE(name) = {                                              \
     /* tp_print           */   0,                                           \
     /* tp_getattr         */   0,                                           \
     /* tp_setattr         */   0,                                           \
-    /* tp_compare         */   0,                                           \
+    /* tp_reserved        */   0,                                           \
     /* tp_repr            */   0,                                           \
     /* tp_as_number       */   0,                                           \
     /* tp_as_sequence     */   sequence,                                    \

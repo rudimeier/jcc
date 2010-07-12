@@ -126,7 +126,7 @@ namespace java {
                 jint modifiers;
 
                 OBJ_CALL(modifiers = self->object.getModifiers());
-                return PyInt_FromLong(modifiers);
+                return PyLong_FromLong(modifiers);
             }
 
             static PyObject *t_Field_getType(t_Field *self)

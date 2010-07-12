@@ -179,12 +179,9 @@ try:
             distutils.cygwinccompiler.Mingw32CCompiler = JCCMinGW32CCompiler
 
 except ImportError:
-    if sys.version_info < (2, 4):
-        raise ImportError, 'setuptools is required when using Python 2.3'
-    else:
-        from distutils.core import setup, Extension
-        with_setuptools = None
-        enable_shared = False
+    from distutils.core import setup, Extension
+    with_setuptools = None
+    enable_shared = False
 
 
 def main(debug):
@@ -303,11 +300,11 @@ def main(debug):
             os.makedirs('jcc/classes')
         try:
             process = Popen(args, stderr=PIPE)
-        except Exception, e:
-            raise type(e), "%s: %s" %(e, args)
+        except Exception as e:
+            raise type(e)("%s: %s" %(e, args))
         process.wait()
         if process.returncode != 0:
-            raise OSError, process.stderr.read()
+            raise OSError(process.stderr.read())
         package_data.append('classes/org/apache/jcc/PythonVM.class')
         package_data.append('classes/org/apache/jcc/PythonException.class')
 

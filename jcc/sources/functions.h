@@ -33,6 +33,8 @@ typedef intintobjargproc ssizessizeobjargproc;
 typedef PyTypeObject **(*getparametersfn)(void *);
 typedef int (*boxfn)(PyTypeObject *, PyObject *, java::lang::Object *);
 
+const char *PyUnicode_AsString(PyObject *obj);
+
 PyObject *PyErr_SetArgsError(char *name, PyObject *args);
 PyObject *PyErr_SetArgsError(PyObject *self, char *name, PyObject *args);
 PyObject *PyErr_SetArgsError(PyTypeObject *type, char *name, PyObject *args);
@@ -60,7 +62,7 @@ int _parseArgs(PyObject **args, unsigned int count, char *types,
 
 #define parseArgs(args, types, rest...) \
     _parseArgs(((PyTupleObject *)(args))->ob_item, \
-               ((PyTupleObject *)(args))->ob_size, types, ##rest)
+               ((PyTupleObject *)(args))->ob_base.ob_size, types, ##rest)
 
 #define parseArg(arg, types, rest...) \
     _parseArgs(&(arg), 1, types, ##rest)

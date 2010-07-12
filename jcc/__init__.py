@@ -26,6 +26,6 @@ if sys.platform == 'win32':
 if __name__ == '__main__':
     import jcc.__main__
 else:
-    from _jcc import initVM
+    from ._jcc import initVM
 
 CLASSPATH=os.path.join(os.path.abspath(os.path.dirname(__file__)), "classes")

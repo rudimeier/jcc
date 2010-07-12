@@ -60,10 +60,10 @@ def patch_setuptools(with_setuptools):
             patch_version = '0.6c11'
 
         if os.path.isdir(st_egg):
-            raise NotImplementedError, patch_st_dir(patch_version, st_egg,
-                                                    jccdir)
+            raise NotImplementedError(patch_st_dir(patch_version, st_egg,
+                                                    jccdir))
         else:
-            raise NotImplementedError, patch_st_zip(patch_version, st_egg,
-                                                    jccdir)
+            raise NotImplementedError(patch_st_zip(patch_version, st_egg,
+                                                    jccdir))
 
     return enable_shared

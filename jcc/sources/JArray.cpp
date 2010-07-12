@@ -57,7 +57,7 @@ public:
     static void dealloc(_t_iterator *self)
     {
         Py_XDECREF(self->obj);
-        self->ob_type->tp_free((PyObject *) self);
+        self->ob_base.ob_type->tp_free((PyObject *) self);
     }
 
     static PyObject *iternext(_t_iterator *self)
@@ -99,9 +99,9 @@ static int init(U *self, PyObject *args, PyObject *kwds)
         if (PyErr_Occurred())
             return -1;
     }
-    else if (PyInt_Check(obj))
+    else if (PyLong_Check(obj))
     {
-        int n = PyInt_AsLong(obj);
+        int n = PyLong_AsLong(obj);
 
         if (n < 0)
         {
@@ -124,7 +124,7 @@ template<typename T, typename U>
 static void dealloc(U *self)
 {
     self->array = JArray<T>((jobject) NULL);
-    self->ob_type->tp_free((PyObject *) self);
+    self->ob_base.ob_type->tp_free((PyObject *) self);
 }
 
 template<typename U>
@@ -144,7 +144,7 @@ static PyObject *_format(U *self, PyObject *(*fn)(PyObject *))
                 PyObject *args = PyTuple_New(1);
 
                 PyTuple_SET_ITEM(args, 0, result);
-                result = PyString_Format(U::format, args);
+                result = PyUnicode_Format(U::format, args);
                 Py_DECREF(args);
 
                 return result;
@@ -154,7 +154,7 @@ static PyObject *_format(U *self, PyObject *(*fn)(PyObject *))
         return NULL;
     }
 
-    return PyString_FromString("<null>");
+    return PyUnicode_FromString("<null>");
 }
 
 template<typename U>
@@ -502,8 +502,8 @@ public:
         {
             memset(&type_object, 0, sizeof(type_object));
 
-            type_object.ob_refcnt = 1;
-            type_object.ob_type = NULL;
+            type_object.ob_base.ob_base.ob_refcnt = 1;
+            type_object.ob_base.ob_base.ob_type = NULL;
             type_object.tp_basicsize = sizeof(_t_iterator<U>);
             type_object.tp_dealloc = (destructor) _t_iterator<U>::dealloc;
             type_object.tp_flags = Py_TPFLAGS_DEFAULT;
@@ -529,7 +529,7 @@ public:
             PyModule_AddObject(module, name, (PyObject *) &type_object);
         }
 
-        U::format = PyString_FromFormat("JArray<%s>%%s", type_name);
+        U::format = PyUnicode_FromFormat("JArray<%s>%%s", type_name);
         iterator_type_object.install(iterator_name, module);
     }
 
@@ -575,20 +575,16 @@ public:
             (ssizeargfunc) (PyObject *(*)(U *, Py_ssize_t)) seq_repeat<U>;
         seq_methods.sq_item =
             (ssizeargfunc) (PyObject *(*)(U *, Py_ssize_t)) seq_get<U>;
-        seq_methods.sq_slice =
-            (ssizessizeargfunc) (PyObject *(*)(U *, Py_ssize_t, Py_ssize_t))
-            seq_getslice<U>;
+        seq_methods.was_sq_slice = NULL;
         seq_methods.sq_ass_item =
             (ssizeobjargproc) (int (*)(U *, Py_ssize_t, PyObject *)) seq_set<U>;
-        seq_methods.sq_ass_slice =
-            (ssizessizeobjargproc) (int (*)(U *, Py_ssize_t, Py_ssize_t,
-                                            PyObject *)) seq_setslice<U>;
+        seq_methods.was_sq_ass_slice = NULL;
         seq_methods.sq_contains =
             (objobjproc) (int (*)(U *, PyObject *)) seq_contains<U>;
         seq_methods.sq_inplace_concat = NULL;
         seq_methods.sq_inplace_repeat = NULL;
 
-        type_object.ob_refcnt = 1;
+        type_object.ob_base.ob_base.ob_refcnt = 1;
         type_object.tp_basicsize = sizeof(U);
         type_object.tp_dealloc = (destructor) (void (*)(U *)) dealloc<T,U>;
         type_object.tp_repr = (reprfunc) (PyObject *(*)(U *)) repr<U>;
@@ -693,9 +689,9 @@ template<> int init< jobject,_t_jobjectarray<jobject> >(_t_jobjectarray<jobject>
         if (PyErr_Occurred())
             return -1;
     }
-    else if (PyInt_Check(obj))
+    else if (PyLong_Check(obj))
     {
-        int n = PyInt_AsLong(obj);
+        int n = PyLong_AsLong(obj);
 
         if (n < 0)
         {
@@ -1081,7 +1077,7 @@ PyObject *JArray_Type(PyObject *self, PyObject *arg)
         if (!type_name)
             return NULL;
     }
-    else if (PyString_Check(arg))
+    else if (PyUnicode_Check(arg))
     {
         type_name = arg;
         Py_INCREF(type_name);
@@ -1102,9 +1098,8 @@ PyObject *JArray_Type(PyObject *self, PyObject *arg)
 
     if (type_name != NULL)
     {
-        name = PyString_AsString(type_name);
+        name = PyUnicode_AsString(type_name);
         Py_DECREF(type_name);
-
         if (!name)
             return NULL;
     }
@@ -1144,8 +1139,14 @@ static PyObject *t_jarray_jbyte__get_string_(t_jarray<jbyte> *self, void *data)
     return self->array.to_string_();
 }
 
+static PyObject *t_jarray_jbyte__get_bytes_(t_jarray<jbyte> *self, void *data)
+{
+    return self->array.to_bytes_();
+}
+
 static PyGetSetDef t_jarray_jbyte__fields[] = {
     { "string_", (getter) t_jarray_jbyte__get_string_, NULL, "", NULL },
+    { "bytes_", (getter) t_jarray_jbyte__get_bytes_, NULL, "", NULL },
     { NULL, NULL, NULL, NULL, NULL }
 };
 

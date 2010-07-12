@@ -10,39 +10,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os, sys, zipfile, _jcc
-
-python_ver = '%d.%d.%d' %(sys.version_info[0:3])
-if python_ver < '2.4':
-    from sets import Set as set
-
-    def split_pkg(string, sep):
-        parts = string.split(sep)
-        if len(parts) > 1:
-            return sep.join(parts[:-1]), parts[-1]
-        return parts
-
-    def sort(list, fn=None, key=None):
-        if fn:
-            list.sort(fn)
-        elif key:
-            def fn(x, y):
-                return cmp(key(x), key(y))
-            list.sort(fn)
-        else:
-            list.sort()
-
-else:
-    def split_pkg(string, sep):
-        return string.rsplit(sep, 1)
-
-    def sort(list, fn=None, key=None):
-        if fn:
-            list.sort(cmp=fn)
-        elif key:
-            list.sort(key=key)
-        else:
-            list.sort()
+import os, sys, zipfile
+import jcc._jcc as _jcc
 
 
 class JavaError(Exception):
@@ -63,7 +32,7 @@ class InvalidArgsError(Exception):
 
 
 _jcc._set_exception_types(JavaError, InvalidArgsError)
-from _jcc import *
+from jcc._jcc import *
 
 
 INDENT = '    '
@@ -130,9 +99,9 @@ def argnames(params, cls):
 
     count = len(params)
     decls = ', '.join(["%s a%d" %(typename(params[i], cls, True), i)
-                       for i in xrange(count)])
+                       for i in range(count)])
     args = ', '.join(['a%d%s' %(i, not params[i].isPrimitive() and '.this$' or '')
-                      for i in xrange(count)])
+                      for i in range(count)])
 
     return decls, ', ' + args
 
@@ -176,7 +145,7 @@ def known(cls, typeset, declares, packages, excludes, generics):
             return known(GenericArrayType.cast_(cls).getGenericComponentType(),
                          typeset, declares, packages, excludes, True)
         else:
-            raise TypeError, (cls, cls.getClass())
+            raise TypeError((cls, cls.getClass()))
 
     while cls.isArray():
         cls = cls.getComponentType()
@@ -192,7 +161,7 @@ def known(cls, typeset, declares, packages, excludes, generics):
         declares.add(cls)
         return True
 
-    if split_pkg(className, '.')[0] in packages:
+    if className.rsplit('.', 1)[0] in packages:
         typeset.add(cls)
         declares.add(cls)
         cls = cls.getSuperclass()
@@ -214,7 +183,7 @@ def find_method(cls, name, params):
             else:
                 method = cls.getMethod(name, params)
             break
-        except JavaError, e:
+        except JavaError as e:
             if (e.getJavaException().getClass().getName() == 'java.lang.NoSuchMethodException'):
                 if not declared:
                     declared = True
@@ -263,7 +232,7 @@ def signature(fn, argsOnly=False):
 
 def forward(out, namespace, indent):
 
-    for name, entries in namespace.iteritems():
+    for name, entries in namespace.items():
         if entries is True:
             line(out, indent, 'class %s;', cppname(name))
         else:
@@ -347,20 +316,20 @@ def jcc(args):
                 i += 1
                 vmargs.append(args[i])
             elif arg == '--python':
-                from python import python, module
+                from .python import python, module
                 i += 1
                 moduleName = args[i]
             elif arg == '--module':
                 i += 1
                 modules.append(args[i])
             elif arg == '--build':
-                from python import compile
+                from .python import compile
                 build = True
             elif arg == '--install':
-                from python import compile
+                from .python import compile
                 install = True
             elif arg == '--compile':
-                from python import compile
+                from .python import compile
                 recompile = True
             elif arg == '--output':
                 i += 1
@@ -405,10 +374,10 @@ def jcc(args):
             elif arg == '--shared':
                 shared = True
             elif arg == '--bdist':
-                from python import compile
+                from .python import compile
                 dist = True
             elif arg == '--wininst':
-                from python import compile
+                from .python import compile
                 wininst = True
                 dist = True
             elif arg == '--compiler':
@@ -431,7 +400,7 @@ def jcc(args):
                 i += 1
                 imports[args[i]] = ()
             else:
-                raise ValueError, "Invalid argument: %s" %(arg)
+                raise ValueError("Invalid argument: %s" %(arg))
         else:
             classNames.add(arg)
         i += 1
@@ -449,11 +418,11 @@ def jcc(args):
         if shared:
             imports = dict((__import__(import_), set()) for import_ in imports)
         else:
-            raise ValueError, "--shared must be used when using --import"
+            raise ValueError("--shared must be used when using --import")
 
     if recompile or not build and (install or dist):
         if moduleName is None:
-            raise ValueError, 'module name not specified (use --python)'
+            raise ValueError("module name not specified (use --python)")
         else:
             compile(env, os.path.dirname(args[0]), output, moduleName,
                     install, dist, debug, jars, version,
@@ -462,7 +431,8 @@ def jcc(args):
                     arch, generics, resources, imports)
     else:
         if imports:
-            def walk((include, importset), dirname, names):
+            def walk(args, dirname, names):
+                (include, importset) = args
                 for name in names:
                     if name.endswith('.h'):
                         className = os.path.join(dirname[len(include) + 1:],
@@ -470,7 +440,7 @@ def jcc(args):
                         if os.path.sep != '/':
                             className = className.replace(os.path.sep, '/')
                         importset.add(findClass(className))
-            for import_, importset in imports.iteritems():
+            for import_, importset in imports.items():
                 env._addClassPath(import_.CLASSPATH)
                 include = os.path.join(import_.__dir__, 'include')
                 os.path.walk(include, walk, (include, importset))
@@ -481,7 +451,7 @@ def jcc(args):
                 continue
             cls = findClass(className.replace('.', '/'))
             if cls is None:
-                raise ValueError, className
+                raise ValueError(className)
             if Modifier.isPublic(cls.getModifiers()):
                 typeset.add(cls)
                 cls = cls.getSuperclass()
@@ -523,18 +493,18 @@ def jcc(args):
             if not os.path.isdir(cppdir):
                 os.makedirs(cppdir)
             if wrapperFiles <= 1:
-                out_cpp = file(os.path.join(cppdir, '__wrap__.cpp'), 'w')
+                out_cpp = open(os.path.join(cppdir, '__wrap__.cpp'), 'w')
             else:
                 fileCount = 1
                 fileName = '__wrap%02d__.cpp' %(fileCount)
-                out_cpp = file(os.path.join(cppdir, fileName), 'w')
+                out_cpp = open(os.path.join(cppdir, fileName), 'w')
 
         done = set()
-        for importset in imports.itervalues():
+        for importset in imports.values():
             done.update(importset)
 
         todo = typeset - done
-	if allInOne and wrapperFiles > 1:
+        if allInOne and wrapperFiles > 1:
             classesPerFile = max(1, len(todo) / wrapperFiles)
         classCount = 0
         while todo:
@@ -547,7 +517,7 @@ def jcc(args):
                     os.makedirs(dir)
 
                 fileName = os.path.join(dir, names[-1])
-                out_h = file(fileName + '.h', "w")
+                out_h = open(fileName + '.h', "w")
                 line(out_h, 0, '#ifndef %s_H', '_'.join(names))
                 line(out_h, 0, '#define %s_H', '_'.join(names))
 
@@ -557,7 +527,7 @@ def jcc(args):
                            generics, _dll_export)
 
                 if not allInOne:
-                    out_cpp = file(fileName + '.cpp', 'w')
+                    out_cpp = open(fileName + '.cpp', 'w')
                 names, superNames = code(env, out_cpp,
                                          cls, superCls, constructors,
                                          methods, protectedMethods,
@@ -582,9 +552,9 @@ def jcc(args):
                 elif wrapperFiles > 1:
                     if classCount >= classesPerFile:
                         out_cpp.close()
-	                fileCount += 1
-	                fileName = '__wrap%02d__.cpp' %(fileCount)
-	                out_cpp = file(os.path.join(cppdir, fileName), 'w')
+                        fileCount += 1
+                        fileName = '__wrap%02d__.cpp' %(fileCount)
+                        out_cpp = open(os.path.join(cppdir, fileName), 'w')
                         classCount = 0
                         
             done.update(todo)
@@ -594,7 +564,7 @@ def jcc(args):
             out_cpp.close()
 
         if moduleName:
-            out = file(os.path.join(cppdir, moduleName) + '.cpp', 'w')
+            out = open(os.path.join(cppdir, moduleName) + '.cpp', 'w')
             module(out, allInOne, done, imports, cppdir, moduleName,
                    shared, generics)
             out.close()
@@ -652,7 +622,7 @@ def header(env, out, cls, typeset, packages, excludes, generics, _dll_export):
                     break
             else:
                 constructors.append(constructor)
-    sort(constructors, key=lambda x: len(x.getParameterTypes()))
+    constructors.sort(key=lambda x: len(x.getParameterTypes()))
 
     methods = {}
     protectedMethods = []
@@ -703,14 +673,8 @@ def header(env, out, cls, typeset, packages, excludes, generics, _dll_export):
                 else:
                     methods[sig] = method
 
-    def _compare(m0, m1):
-        value = cmp(m0.getName(), m1.getName())
-        if value == 0:
-            value = len(m0.getParameterTypes()) - len(m1.getParameterTypes())
-        return value
-
-    methods = methods.values()
-    sort(methods, fn=_compare)
+    methods = list(methods.values())
+    methods.sort(key=lambda x: (x.getName(), len(x.getParameterTypes())))
 
     for constructor in constructors:
         if generics:
@@ -743,8 +707,8 @@ def header(env, out, cls, typeset, packages, excludes, generics, _dll_export):
                 fields.append(field)
             else:
                 instanceFields.append(field)
-    sort(fields, key=lambda x: x.getName())
-    sort(instanceFields, key=lambda x: x.getName())
+    fields.sort(key=lambda x: x.getName())
+    instanceFields.sort(key=lambda x: x.getName())
 
     line(out)
     superNames = superClsName.split('.')

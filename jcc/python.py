@@ -12,39 +12,35 @@
 #   limitations under the License.
 #
 
-import os, sys, platform, shutil, _jcc
-from itertools import izip
+import os, sys, platform, shutil
 
-from cpp import PRIMITIVES, INDENT, HALF_INDENT
-from cpp import cppname, cppnames, typename
-from cpp import line, signature, find_method, split_pkg, sort
-from cpp import Modifier, Class, Method
-from _jcc import findClass
-from config import INCLUDES, CFLAGS, DEBUG_CFLAGS, LFLAGS, IMPLIB_LFLAGS, \
+
+from .cpp import PRIMITIVES, INDENT, HALF_INDENT
+from .cpp import cppname, cppnames, typename
+from .cpp import line, signature, find_method
+from .cpp import Modifier, Class, Method
+from ._jcc import findClass
+from .config import INCLUDES, CFLAGS, DEBUG_CFLAGS, LFLAGS, IMPLIB_LFLAGS, \
     SHARED, VERSION as JCC_VER
 
 try:
-    from cpp import ParameterizedType, TypeVariable
+    from .cpp import ParameterizedType, TypeVariable
 except ImportError:
     pass
 
-python_ver = '%d.%d.%d' %(sys.version_info[0:3])
-if python_ver < '2.4':
-    from sets import Set as set
-
 
 RESULTS = { 'boolean': 'Py_RETURN_BOOL(%s);',
-            'byte': 'return PyInt_FromLong((long) %s);',
+            'byte': 'return PyLong_FromLong((long) %s);',
             'char': 'return PyUnicode_FromUnicode((Py_UNICODE *) &%s, 1);',
             'double': 'return PyFloat_FromDouble((double) %s);',
             'float': 'return PyFloat_FromDouble((double) %s);',
-            'int': 'return PyInt_FromLong((long) %s);',
+            'int': 'return PyLong_FromLong((long) %s);',
             'long': 'return PyLong_FromLongLong((PY_LONG_LONG) %s);',
-            'short': 'return PyInt_FromLong((long) %s);',
+            'short': 'return PyLong_FromLong((long) %s);',
             'java.lang.String': 'return j2p(%s);' }
 
 CALLARGS = { 'boolean': ('O', '(%s ? Py_True : Py_False)', False),
-             'byte': ('O', 'PyInt_FromLong(%s)', True),
+             'byte': ('O', 'PyLong_FromLong(%s)', True),
              'char': ('O', 'PyUnicode_FromUnicode((Py_UNICODE *) &%s, 1)', True),
              'double': ('d', '(double) %s', False),
              'float': ('f', '(float) %s', False),
@@ -150,26 +146,26 @@ def parseArgs(params, current, generics, genericParams=None):
             while cls.isArray():
                 cls = cls.getComponentType()
             if getTypeParameters(cls):
-                ns, sep, n = rpartition(typename(cls, current, False), '::')
+                ns, sep, n = typename(cls, current, False).rpartition('::')
                 return ', &a%d, &p%d, %s%st_%s::parameters_' %(i, i, ns, sep, n)
         return ', &a%d' %(i)
 
     if genericParams:
         sig = ''.join([signature(param, genericParam)
-                       for param, genericParam in izip(params, genericParams)])
+                       for param, genericParam in zip(params, genericParams)])
         chk = ''.join([checkarg(param, genericParam)
-                       for param, genericParam in izip(params, genericParams)])
+                       for param, genericParam in zip(params, genericParams)])
     else:
         sig = ''.join([signature(param) for param in params])
         chk = ''.join([checkarg(param) for param in params])
 
     return (sig, chk,
-            ''.join([callarg(params[i], i) for i in xrange(len(params))]))
+            ''.join([callarg(params[i], i) for i in range(len(params))]))
 
 
 def declareVars(out, indent, params, current, generics, typeParams):
 
-    for i in xrange(len(params)):
+    for i in range(len(params)):
         param = params[i]
         line(out, indent, '%s a%d%s;',
              typename(param, current, False), i,
@@ -207,7 +203,7 @@ def construct(out, indent, cls, inCase, constructor, names, generics):
         indent += 1
 
     line(out, indent, 'INT_CALL(object = %s(%s));',
-         cppname(names[-1]), ', '.join(['a%d' %(i) for i in xrange(count)]))
+         cppname(names[-1]), ', '.join(['a%d' %(i) for i in range(count)]))
     line(out, indent, 'self->object = object;')
     if inCase:
         line(out, indent, 'break;')
@@ -221,17 +217,6 @@ def construct(out, indent, cls, inCase, constructor, names, generics):
         line(out, indent, '}')
 
 
-def rpartition(string, sep):
-
-    if python_ver >= '2.5.0':
-        return string.rpartition(sep)
-    else:
-        parts = split_pkg(string, sep)
-        if len(parts) == 1:
-            return ('', '', parts[0])
-        return (parts[0], sep, parts[1])
-
-
 def fieldValue(cls, value, fieldType):
 
     if fieldType.isArray():
@@ -243,14 +228,14 @@ def fieldValue(cls, value, fieldType):
         elif fieldType.getName() == 'java.lang.String':
             result = 'JArray<jstring>(%s->this$).wrap()'
         else:
-            parts = rpartition(typename(fieldType, cls, False), '::')
+            parts = typename(fieldType, cls, False).rpartition('::')
             result = 'JArray<jobject>(%%s->this$).wrap(%s%st_%s::wrap_jobject)' %(parts)
 
     elif fieldType.getName() == 'java.lang.String':
         result = 'j2p(*%s)'
 
     elif not fieldType.isPrimitive():
-        parts = rpartition(typename(fieldType, cls, False), '::')
+        parts = typename(fieldType, cls, False).rpartition('::')
         result = '%s%st_%s::wrap_Object(*%%s)' %(parts)
 
     else:
@@ -278,10 +263,10 @@ def returnValue(cls, returnType, value, genericRT=None, typeParams=None):
         elif returnType.getName() == 'java.lang.String':
             return 'return JArray<jstring>(%s.this$).wrap();' %(value)
 
-        ns, sep, n = rpartition(typename(returnType, cls, False), '::')
+        ns, sep, n = typename(returnType, cls, False).rpartition('::')
         return 'return JArray<jobject>(%s.this$).wrap(%s%st_%s::wrap_jobject);' %(value, ns, sep, n)
 
-    ns, sep, n = rpartition(typename(returnType, cls, False), '::')
+    ns, sep, n = typename(returnType, cls, False).rpartition('::')
     if genericRT is not None:
         if ParameterizedType.instance_(genericRT):
             genericRT = ParameterizedType.cast_(genericRT)
@@ -373,16 +358,16 @@ def call(out, indent, cls, inCase, method, names, cardinality, isExtension,
     if Modifier.isStatic(modifiers):
         line(out, indent, 'OBJ_CALL(%s%s::%s(%s));',
              result, '::'.join(cppnames(names)), name,
-             ', '.join(['a%d' %(i) for i in xrange(count)]))
+             ', '.join(['a%d' %(i) for i in range(count)]))
     else:
         line(out, indent, 'OBJ_CALL(%sself->object.%s(%s));',
-             result, name, ', '.join(['a%d' %(i) for i in xrange(count)]))
+             result, name, ', '.join(['a%d' %(i) for i in range(count)]))
 
     if isExtension and name == 'clone' and Modifier.isNative(modifiers):
         line(out)
         line(out, indent, '%s object(result.this$);', typename(cls, cls, False))
         line(out, indent, 'if (PyObject_TypeCheck(arg, &PY_TYPE(FinalizerProxy)) &&')
-        line(out, indent, '    PyObject_TypeCheck(((t_fp *) arg)->object, self->ob_type))')
+        line(out, indent, '    PyObject_TypeCheck(((t_fp *) arg)->object, self->ob_base.ob_type))')
         line(out, indent, '{')
         line(out, indent + 1, 'PyObject *_arg = ((t_fp *) arg)->object;')
         line(out, indent + 1, '((t_JObject *) _arg)->object = object;')
@@ -434,7 +419,7 @@ def jniargs(params):
 
     count = len(params)
     decls = ', '.join(['%s a%d' %(jniname(params[i]), i)
-                       for i in xrange(count)])
+                       for i in range(count)])
     if decls:
         return ', ' + decls
 
@@ -483,13 +468,13 @@ def extension(env, out, indent, cls, names, name, count, method, generics):
             elif param.getName() == 'java.lang.String':
                 code = 'JArray<jstring>(%s).wrap()'
             else:
-                parts = rpartition(typename(param, cls, False), '::')
+                parts = typename(param, cls, False).rpartition('::')
                 code = 'JArray<jobject>(%%s).wrap(%s%st_%s::wrap_jobject)' %(parts)
             sig, decref = 'O', True
         elif param.getName() == 'java.lang.String':
             sig, code, decref = 'O', 'j2p(%%s))', True
         else:
-            parts = rpartition(typename(param, cls, False), '::')
+            parts = typename(param, cls, False).rpartition('::')
             sig, code, decref = 'O', '%s%st_%s::wrap_Object(%s%s%s(%%s))' %(parts*2), True
         if sig == 'O':
             line(out, indent, 'PyObject *o%d = %s;', i, code %('a%d' %(i)))
@@ -668,14 +653,14 @@ def python(env, out_h, out, cls, superCls, names, superNames,
                         elif name + '_' in allMethods:
                             allMethods[name + '_'].append(method)
                         else:
-                            print >>sys.stderr, "  Warning: renaming static method '%s' on class %s to '%s_' since it is shadowed by non-static method of same name." %(name, '.'.join(names), name)
+                            print("  Warning: renaming static method '%s' on class %s to '%s_' since it is shadowed by non-static method of same name." %(name, '.'.join(names), name), file=sys.stderr)
                             allMethods[name + '_'] = [method]
                     else:
                         allMethods[name] = [method]
                 else:
                     if name in allMethods:
                         if Modifier.isStatic(allMethods[name][0].getModifiers()):
-                            print >>sys.stderr, "  Warning: renaming static method '%s' on class %s to '%s_' since it is shadowed by non-static method of same name." %(name, '.'.join(names), name)
+                            print("  Warning: renaming static method '%s' on class %s to '%s_' since it is shadowed by non-static method of same name." %(name, '.'.join(names), name), file=sys.stderr)
                             allMethods[name + '_'] = allMethods[name]
                             allMethods[name] = [method]
                         else:
@@ -696,15 +681,15 @@ def python(env, out_h, out, cls, superCls, names, superNames,
                     propMethods.setdefault(name[2].lower() + name[3:],
                                            []).append(method)
 
-    properties = set([name for name in propMethods.iterkeys()
+    properties = set([name for name in propMethods.keys()
                       if name not in allMethods])
     propMethods = [(name, propMethods[name]) for name in properties]
-    sort(propMethods, key=lambda x: x[0])
+    propMethods.sort(key=lambda x: x[0])
 
-    extMethods = extMethods.items()
-    sort(extMethods, key=lambda x: x[0])
-    allMethods = allMethods.items()
-    sort(allMethods, key=lambda x: x[0])
+    extMethods = list(extMethods.items())
+    extMethods.sort(key=lambda x: x[0])
+    allMethods = list(allMethods.items())
+    allMethods.sort(key=lambda x: x[0])
 
     iteratorMethod = None
     iteratorExt = False
@@ -725,7 +710,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
 
     for name, methods in allMethods:
         args, x, cardinality = methodargs(methods, superMethods)
-        sort(methods, key=lambda x: len(x.getParameterTypes()))
+        methods.sort(key=lambda x: len(x.getParameterTypes()))
         method = methods[0]
         modifiers = method.getModifiers()
         if name == 'iterator' and iteratorMethod is None:
@@ -763,7 +748,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
 
     for name, methods in extMethods:
         args, x, cardinality = methodargs(methods, superMethods)
-        sort(methods, key=lambda x: len(x.getParameterTypes()))
+        methods.sort(key=lambda x: len(x.getParameterTypes()))
         method = methods[0]
         modifiers = method.getModifiers()
         if name == 'iterator' and iteratorMethod is None:
@@ -908,7 +893,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
     elif nextMethod and iterable is not None and iterator.isAssignableFrom(cls):
         tp_iter = 'PyObject_SelfIter'
         returnName = typename(nextMethod.getReturnType(), cls, False)
-        ns, sep, n = rpartition(returnName, '::')
+        ns, sep, n = returnName.rpartition('::')
         if nextExt:
             tp_iternext = 'get_extension_next'
         else:
@@ -916,7 +901,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
     elif nextElementMethod and enumeration.isAssignableFrom(cls):
         tp_iter = 'PyObject_SelfIter'
         returnName = typename(nextElementMethod.getReturnType(), cls, False)
-        ns, sep, n = rpartition(returnName, '::')
+        ns, sep, n = returnName.rpartition('::')
         if nextElementExt:
             tp_iternext = 'get_extension_nextElement'
         else:
@@ -924,7 +909,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
     elif nextMethod:
         tp_iter = 'PyObject_SelfIter'
         returnName = typename(nextMethod.getReturnType(), cls, False)
-        ns, sep, n = rpartition(returnName, '::')
+        ns, sep, n = returnName.rpartition('::')
         if nextExt:
             tp_iternext = 'get_extension_next'
         else:
@@ -971,18 +956,11 @@ def python(env, out_h, out, cls, superCls, names, superNames,
         line(out)
         line(out, indent, 'static PySequenceMethods t_%s_as_sequence = {',
              names[-1])
-        if python_ver < '2.5.0':
-            line(out, indent + 1, '(inquiry) %s,', lenName)
-            line(out, indent + 1, '0,')
-            line(out, indent + 1, '0,')
-            line(out, indent + 1, '(intargfunc) %s', getName)
-            line(out, indent, '};')
-        else:
-            line(out, indent + 1, '(lenfunc) %s,', lenName)
-            line(out, indent + 1, '0,')
-            line(out, indent + 1, '0,')
-            line(out, indent + 1, '(ssizeargfunc) %s', getName)
-            line(out, indent, '};')
+        line(out, indent + 1, '(lenfunc) %s,', lenName)
+        line(out, indent + 1, '0,')
+        line(out, indent + 1, '0,')
+        line(out, indent + 1, '(ssizeargfunc) %s', getName)
+        line(out, indent, '};')
         tp_as_sequence = '&t_%s_as_sequence' %(names[-1])
     else:
         tp_as_sequence = '0'
@@ -1298,7 +1276,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
             line(out)
             getter = None
             setters = []
-            sort(methods, key=lambda x: x.getName())
+            methods.sort(key=lambda x: x.getName())
             for method in methods:
                 methodName = method.getName()
                 if not getter and (methodName.startswith('get') or
@@ -1404,7 +1382,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
 def package(out, allInOne, cppdir, namespace, names):
 
     if not allInOne:
-        out = file(os.path.join(os.path.join(cppdir, *names),
+        out = open(os.path.join(os.path.join(cppdir, *names),
                                 '__init__.cpp'), 'w')
 
     if allInOne and not names or not allInOne:
@@ -1420,8 +1398,8 @@ def package(out, allInOne, cppdir, namespace, names):
     packages = []
     types = []
 
-    namespaces = namespace.items()
-    sort(namespaces, key=lambda x: x[0])
+    namespaces = list(namespace.items())
+    namespaces.sort(key=lambda x: x[0])
     for name, entries in namespaces:
         if entries is True:
             if names:
@@ -1509,10 +1487,10 @@ def module(out, allInOne, classes, imports, cppdir, moduleName,
     line(out, 0, '#include "jccfuncs.h"')
 
     if allInOne:
-        out_init = file(os.path.join(cppdir, '__init__.cpp'), 'w')
+        out_init = open(os.path.join(cppdir, '__init__.cpp'), 'w')
     namespaces = {}
     for cls in classes:
-        for importset in imports.itervalues():
+        for importset in imports.values():
             if cls in importset:
                 break
         else:
@@ -1535,11 +1513,17 @@ def module(out, allInOne, classes, imports, cppdir, moduleName,
     line(out)
     line(out, 0, 'extern "C" {')
 
+    line(out, 1, 'static struct PyModuleDef %s_def = {', extname)
+    line(out, 2, 'PyModuleDef_HEAD_INIT,')
+    line(out, 2, '"%s",', extname);
+    line(out, 2, '"%s module",', extname);
+    line(out, 2, '0,')
+    line(out, 2, 'jcc_funcs,');
+    line(out, 1, '};')
     line(out)
-    line(out, 1, 'void init%s(void)', extname)
+    line(out, 1, 'PyObject *PyInit_%s(void)', extname)
     line(out, 1, '{')
-    line(out, 2, 'PyObject *module = Py_InitModule3("%s", jcc_funcs, "");',
-         extname);
+    line(out, 2, 'PyObject *module = PyModule_Create(&%s_def);', extname);
     line(out)
     line(out, 2, 'initJCC(module);')
     line(out)
@@ -1549,6 +1533,8 @@ def module(out, allInOne, classes, imports, cppdir, moduleName,
     line(out, 2, 'INSTALL_TYPE(FinalizerProxy, module);')
     line(out, 2, '_install_jarray(module);')
     line(out, 2, '__install__(module);')
+    line(out)
+    line(out, 2, 'return module;')
     line(out, 1, '}')
     line(out, 0, '}')
 
@@ -1564,12 +1550,10 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
         from setuptools import setup, Extension
         with_setuptools = True
         if shared and not SHARED:
-            raise NotImplementedError, "JCC was not built with --shared mode support, see JCC's INSTALL file for more information"
+            raise NotImplementedError("JCC was not built with --shared mode support, see JCC's INSTALL file for more information")
     except ImportError:
-        if python_ver < '2.4':
-            raise ImportError, 'setuptools is required when using Python 2.3'
         if shared:
-            raise ImportError, 'setuptools is required when using --shared'
+            raise ImportError('setuptools is required when using --shared')
         from distutils.core import setup, Extension
         with_setuptools = False
 
@@ -1579,7 +1563,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
     if not os.path.isdir(modulePath):
         os.makedirs(modulePath)
 
-    out = file(os.path.join(modulePath, '__init__.py'), 'w')
+    out = open(os.path.join(modulePath, '__init__.py'), 'w')
     line(out)
     if shared:
         line(out, 0, "import os, sys")
@@ -1588,11 +1572,11 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
         if find_jvm_dll:
             line(out, 1, "from jcc.windows import add_jvm_dll_directory_to_path")
             line(out, 1, "add_jvm_dll_directory_to_path()")
-        line(out, 1, "import jcc, %s", extname)
+        line(out, 1, "import jcc, %s.%s as %s", moduleName, extname, extname)
         line(out, 0, "else:")
-        line(out, 1, "import %s", extname)
+        line(out, 1, "import %s.%s as %s", moduleName, extname, extname)
     else:
-        line(out, 0, 'import os, %s', extname)
+        line(out, 0, 'import os, %s.%s as %s', moduleName, extname, extname)
     line(out)
     line(out, 0, '__dir__ = os.path.abspath(os.path.dirname(__file__))')
 
@@ -1677,7 +1661,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
     line(out)
     for import_ in imports:
         line(out, 0, 'from %s._%s import *', import_.__name__, import_.__name__)
-    line(out, 0, 'from %s import *', extname)
+    line(out, 0, 'from %s.%s import *', moduleName, extname)
     out.close()
 
     includes = [os.path.join(output, extname),
@@ -1690,7 +1674,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
         sources.append('jcc.cpp')
         sources.append('JCCEnv.cpp')
     for source in sources:
-	shutil.copy2(os.path.join(jccPath, 'sources', source),
+        shutil.copy2(os.path.join(jccPath, 'sources', source),
                      os.path.join(output, extname))
 
     if shared:
@@ -1738,7 +1722,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
         script_args.append('--debug')
         compile_args += DEBUG_CFLAGS
     elif sys.platform == 'win32':
-	pass
+        pass
     elif sys.platform == 'sunos5':
         link_args.append('-Wl,-s')
     else:
@@ -1772,7 +1756,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
     }
 
     if shared:
-        shlibdir = os.path.dirname(os.path.dirname(_jcc.__file__))
+        shlibdir = os.path.dirname(os.path.dirname(jcc._jcc.__file__))
         if sys.platform == 'darwin':   # distutils no good with -R
             machine = platform.machine()
             if machine.startswith('iPod') or machine.startswith('iPhone'):
@@ -1810,7 +1794,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
                 for import_ in imports
             ] + [("_dll_%s" %(moduleName), '__declspec(dllexport)')]
         else:
-            raise NotImplementedError, "shared mode on %s" %(sys.platform)
+            raise NotImplementedError("shared mode on %s" %(sys.platform))
 
     if arch and sys.platform == 'darwin':
         from distutils import sysconfig
