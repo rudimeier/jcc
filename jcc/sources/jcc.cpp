@@ -335,16 +335,6 @@ _DLL_EXPORT PyObject *getVMEnv(PyObject *self)
 static void registerNatives(JNIEnv *vm_env);
 #endif
 
-_DLL_EXPORT const char *PyUnicode_AsString(PyObject *obj)
-{
-    PyObject *bytes = PyUnicode_AsUTF8String(obj);
-    const char *str = PyBytes_AsString(bytes);
-
-    Py_XDECREF(bytes);
-
-    return str;
-}
-
 _DLL_EXPORT PyObject *initJCC(PyObject *module)
 {
     static int _once_only = 1;
@@ -390,6 +380,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
     if (env->vm)
     {
         PyObject *module_cp = NULL;
+        PyObject *bytes = NULL;
 
         if (initialheap || maxheap || maxstack || vmargs)
         {
@@ -402,12 +393,22 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         {
             module_cp = PyObject_GetAttrString(self, "CLASSPATH");
             if (module_cp != NULL)
-                classpath = PyUnicode_AsString(module_cp);
+            {
+                bytes = PyUnicode_AsUTF8String(module_cp);
+                if (!bytes)
+                {
+                    Py_DECREF(module_cp);
+                    return NULL;
+                }
+
+                classpath = PyBytes_AS_STRING(bytes);
+            }
         }
 
         if (classpath && classpath[0])
             env->setClassPath(classpath);
 
+        Py_XDECREF(bytes);
         Py_XDECREF(module_cp);
 
         return getVMEnv(self);
@@ -420,6 +421,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         JavaVM *vm;
         unsigned int nOptions = 0;
         PyObject *module_cp = NULL;
+        PyObject *bytes = NULL;
 
         vm_args.version = JNI_VERSION_1_4;
         JNI_GetDefaultJavaVMInitArgs(&vm_args);
@@ -427,21 +429,47 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         if (classpath == NULL && self != NULL)
         {
             module_cp = PyObject_GetAttrString(self, "CLASSPATH");
-            if (module_cp != NULL)
-                classpath = PyUnicode_AsString(module_cp);
+            if (module_cp)
+            {
+                bytes = PyUnicode_AsUTF8String(module_cp);
+                if (!bytes)
+                {
+                    Py_DECREF(module_cp);
+                    return NULL;
+                }
+
+                classpath = PyBytes_AS_STRING(bytes);
+            }
         }
 
 #ifdef _jcc_lib
         PyObject *jcc = PyImport_ImportModule("jcc");
+        if (!jcc)
+            return NULL;
+
         PyObject *cp = PyObject_GetAttrString(jcc, "CLASSPATH");
+        if (!cp)
+        {
+            Py_DECREF(jcc);
+            return NULL;
+        }
+
+        PyObject *cpbytes = PyUnicode_AsUTF8String(cp);
+        if (!cpbytes)
+        {
+            Py_DECREF(cp);
+            Py_DECREF(jcc);
+            return NULL;
+        }
 
         if (classpath)
-            add_paths("-Djava.class.path=", PyUnicode_AsString(cp), classpath,
-                      &vm_options[nOptions++]);
+            add_paths("-Djava.class.path=", PyBytes_AS_STRING(cpbytes),
+                      classpath, &vm_options[nOptions++]);
         else
-            add_option("-Djava.class.path=", PyUnicode_AsString(cp),
+            add_option("-Djava.class.path=", PyBytes_AS_STRING(cpbytes),
                        &vm_options[nOptions++]);
-            
+
+        Py_DECREF(cpbytes);
         Py_DECREF(cp);
         Py_DECREF(jcc);
 #else
@@ -450,6 +478,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
                        &vm_options[nOptions++]);
 #endif
 
+        Py_XDECREF(bytes);
         Py_XDECREF(module_cp);
 
         if (initialheap)

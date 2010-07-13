@@ -980,6 +980,32 @@ PyObject *j2p(const String& js)
     return env->fromJString((jstring) js.this$, 0);
 }
 
+char *PyUnicode_AsString(PyObject *obj, char *buffer, Py_ssize_t size)
+{
+    PyObject *bytes = PyUnicode_AsUTF8String(obj);
+
+    if (bytes == NULL)
+        return NULL;
+
+    const char *str = PyBytes_AS_STRING(bytes);
+    Py_ssize_t len = PyBytes_GET_SIZE(bytes);
+
+    if (len < size)
+    {
+        memcpy(buffer, str, len);
+        buffer[len] = '\0';
+    }
+    else if (size > 0)
+    {
+        memcpy(buffer, str, size - 1);
+        buffer[size] = '\0';
+    }
+
+    Py_XDECREF(bytes);
+
+    return buffer;
+}
+
 PyObject *PyErr_SetArgsError(char *name, PyObject *args)
 {
     if (!PyErr_Occurred())
@@ -1083,9 +1109,11 @@ void throwPythonError(void)
     if (exc)
     {
         PyObject *name = PyObject_GetAttrString(exc, "__name__");
+        char buffer[128];
 
         env->get_vm_env()->ThrowNew(env->getPythonExceptionClass(),
-                                    PyUnicode_AsString(name));
+                                    PyUnicode_AsString(name, buffer,
+                                                       sizeof(buffer)));
         Py_DECREF(name);
     }
     else

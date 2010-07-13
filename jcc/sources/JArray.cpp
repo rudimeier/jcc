@@ -1070,6 +1070,7 @@ PyObject *JArray_Type(PyObject *self, PyObject *arg)
 {
     PyObject *type_name = NULL, *type;
     char const *name = NULL;
+    char buffer[16];
 
     if (PyType_Check(arg))
     {
@@ -1098,7 +1099,7 @@ PyObject *JArray_Type(PyObject *self, PyObject *arg)
 
     if (type_name != NULL)
     {
-        name = PyUnicode_AsString(type_name);
+        name = PyUnicode_AsString(type_name, buffer, sizeof(buffer));
         Py_DECREF(type_name);
         if (!name)
             return NULL;

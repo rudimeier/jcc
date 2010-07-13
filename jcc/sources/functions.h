@@ -33,7 +33,7 @@ typedef intintobjargproc ssizessizeobjargproc;
 typedef PyTypeObject **(*getparametersfn)(void *);
 typedef int (*boxfn)(PyTypeObject *, PyObject *, java::lang::Object *);
 
-const char *PyUnicode_AsString(PyObject *obj);
+char *PyUnicode_AsString(PyObject *obj, char *buffer, Py_ssize_t size);
 
 PyObject *PyErr_SetArgsError(char *name, PyObject *args);
 PyObject *PyErr_SetArgsError(PyObject *self, char *name, PyObject *args);
