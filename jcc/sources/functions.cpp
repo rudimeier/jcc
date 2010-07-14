@@ -998,7 +998,7 @@ char *PyUnicode_AsString(PyObject *obj, char *buffer, Py_ssize_t size)
     else if (size > 0)
     {
         memcpy(buffer, str, size - 1);
-        buffer[size] = '\0';
+        buffer[size - 1] = '\0';
     }
 
     Py_XDECREF(bytes);
