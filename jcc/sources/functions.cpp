@@ -273,7 +273,7 @@ static boxfn get_boxfn(PyTypeObject *type)
     if (cobj == NULL)
         return NULL;
 
-    fn = (boxfn) PyCObject_AsVoidPtr(cobj);
+    fn = (boxfn) PyCapsule_GetPointer(cobj, "boxfn");
     Py_DECREF(cobj);
 
     return fn;
@@ -1704,7 +1704,7 @@ PyObject *wrapType(PyTypeObject *type, const jobject& obj)
     if (cobj == NULL)
         return NULL;
 
-    wrapfn = (PyObject *(*)(const jobject &)) PyCObject_AsVoidPtr(cobj);
+    wrapfn = (PyObject *(*)(const jobject &)) PyCapsule_GetPointer(cobj, "wrapfn");
     Py_DECREF(cobj);
 
     return wrapfn(obj);

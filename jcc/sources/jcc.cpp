@@ -694,7 +694,7 @@ static jobject _PythonVM_instantiate(JNIEnv *vm_env, jobject self,
         return NULL;
     }
 
-    jobj = (jobject) PyCObject_AsVoidPtr(cObj);
+    jobj = (jobject) PyCapsule_GetPointer(cObj, "jobject");
     Py_DECREF(cObj);
 
     jobj = vm_env->NewLocalRef(jobj);

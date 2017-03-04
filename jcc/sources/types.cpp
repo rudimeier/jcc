@@ -416,12 +416,12 @@ PyObject *make_descriptor(PyObject *value)
 
 PyObject *make_descriptor(PyObject *(*wrapfn)(const jobject &))
 {
-    return make_descriptor(PyCObject_FromVoidPtr((void *) wrapfn, NULL));
+    return make_descriptor(PyCapsule_New((void *) wrapfn, "wrapfn", NULL));
 }
 
 PyObject *make_descriptor(boxfn fn)
 {
-    return make_descriptor(PyCObject_FromVoidPtr((void *) fn, NULL));
+    return make_descriptor(PyCapsule_New((void *) fn, "boxfn", NULL));
 }
 
 PyObject *make_descriptor(jboolean b)

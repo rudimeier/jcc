@@ -659,7 +659,7 @@ template<> int init< jobject,_t_jobjectarray<jobject> >(_t_jobjectarray<jobject>
             else
             {
                 wrapfn = (PyObject *(*)(const jobject &))
-                    PyCObject_AsVoidPtr(cobj);
+                    PyCapsule_GetPointer(cobj, "wrapfn");
                 Py_DECREF(cobj);
             }
 
@@ -773,7 +773,7 @@ template<> PyObject *cast_<jobject>(PyTypeObject *type,
             PyErr_Clear();
         else
         {
-            wrapfn = (PyObject *(*)(const jobject &)) PyCObject_AsVoidPtr(cobj);
+            wrapfn = (PyObject *(*)(const jobject &)) PyCapsule_GetPointer(cobj, "wrapfn");
             Py_DECREF(cobj);
         }
 
@@ -809,7 +809,7 @@ template<> PyObject *wrapfn_<jobject>(const jobject &object) {
         PyErr_Clear();
     else
     {
-        wrapfn = (PyObject *(*)(const jobject &)) PyCObject_AsVoidPtr(cobj);
+        wrapfn = (PyObject *(*)(const jobject &)) PyCapsule_GetPointer(cobj, "wrapfn");
         Py_DECREF(cobj);
     }
 

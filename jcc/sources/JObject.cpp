@@ -184,7 +184,7 @@ static int t_JObject_hash(t_JObject *self)
 
 static PyObject *t_JObject__getJObject(t_JObject *self, void *data)
 {
-    return PyCObject_FromVoidPtr((void *) self->object.this$, NULL);
+    return PyCapsule_New((void *) self->object.this$, "jobject", NULL);
 }
 
 #endif /* PYTHON */
