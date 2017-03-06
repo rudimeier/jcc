@@ -165,11 +165,7 @@ static PyObject *t_JObject_repr(t_JObject *self)
     PyObject *name = PyObject_GetAttrString((PyObject *) self->ob_type,
                                             "__name__");
     PyObject *str = self->ob_type->tp_str((PyObject *) self);
-#if PY_VERSION_HEX < 0x02040000
-    PyObject *args = Py_BuildValue("(OO)", name, str);
-#else
     PyObject *args = PyTuple_Pack(2, name, str);
-#endif
     PyObject *format = PyString_FromString("<%s: %s>");
     PyObject *repr = PyString_Format(format, args);
 

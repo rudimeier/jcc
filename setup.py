@@ -224,12 +224,9 @@ try:
             from setuptools.extension import Library
 
 except ImportError:
-    if sys.version_info < (2, 4):
-        raise ImportError, 'setuptools is required when using Python 2.3'
-    else:
-        from distutils.core import setup, Extension
-        with_setuptools = None
-        enable_shared = False
+    from distutils.core import setup, Extension
+    with_setuptools = None
+    enable_shared = False
 
 
 def main(debug):

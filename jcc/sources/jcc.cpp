@@ -247,11 +247,7 @@ static PyObject *t_jccenv__dumpRefs(PyObject *self,
             PyObject *key = PyString_FromString(str);
             PyObject *value = PyInt_FromLong(iter->second.count);
 
-#if PY_VERSION_HEX < 0x02040000
-            PyList_SET_ITEM(result, count++, Py_BuildValue("(OO)", key, value));
-#else
             PyList_SET_ITEM(result, count++, PyTuple_Pack(2, key, value));
-#endif
             Py_DECREF(key);
             Py_DECREF(value);
 
@@ -262,11 +258,7 @@ static PyObject *t_jccenv__dumpRefs(PyObject *self,
             PyObject *key = PyInt_FromLong(iter->first);
             PyObject *value = PyInt_FromLong(iter->second.count);
 
-#if PY_VERSION_HEX < 0x02040000
-            PyList_SET_ITEM(result, count++, Py_BuildValue("(OO)", key, value));
-#else
             PyList_SET_ITEM(result, count++, PyTuple_Pack(2, key, value));
-#endif
             Py_DECREF(key);
             Py_DECREF(value);
         }

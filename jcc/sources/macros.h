@@ -163,31 +163,4 @@ PyObject *t_name::wrap_jobject(const jobject& object)                   \
     }
 
 
-#if PY_VERSION_HEX < 0x02040000
-
-#define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
-#define Py_RETURN_TRUE return Py_INCREF(Py_True), Py_True
-#define Py_RETURN_FALSE return Py_INCREF(Py_False), Py_False
-
-#define Py_CLEAR(op)                            \
-    do {                                        \
-        if (op) {                               \
-            PyObject *tmp = (PyObject *)(op);   \
-            (op) = NULL;                        \
-            Py_DECREF(tmp);                     \
-        }                                       \
-    } while (0)
-
-#define Py_VISIT(op)                                    \
-    do {                                                \
-        if (op) {                                       \
-            int vret = visit((PyObject *)(op), arg);    \
-            if (vret)                                   \
-                return vret;                            \
-        }                                               \
-    } while (0)
-          
-#endif /* Python 2.3.5 */
-
-
 #endif /* _macros_H */

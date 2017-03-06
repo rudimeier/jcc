@@ -975,18 +975,11 @@ def python(env, out_h, out, cls, superCls, names, superNames,
         line(out)
         line(out, indent, 'static PySequenceMethods t_%s_as_sequence = {',
              names[-1])
-        if python_ver < '2.5.0':
-            line(out, indent + 1, '(inquiry) %s,', lenName)
-            line(out, indent + 1, '0,')
-            line(out, indent + 1, '0,')
-            line(out, indent + 1, '(intargfunc) %s', getName)
-            line(out, indent, '};')
-        else:
-            line(out, indent + 1, '(lenfunc) %s,', lenName)
-            line(out, indent + 1, '0,')
-            line(out, indent + 1, '0,')
-            line(out, indent + 1, '(ssizeargfunc) %s', getName)
-            line(out, indent, '};')
+        line(out, indent + 1, '(lenfunc) %s,', lenName)
+        line(out, indent + 1, '0,')
+        line(out, indent + 1, '0,')
+        line(out, indent + 1, '(ssizeargfunc) %s', getName)
+        line(out, indent, '};')
         tp_as_sequence = '&t_%s_as_sequence' %(names[-1])
     else:
         tp_as_sequence = '0'
@@ -1590,8 +1583,6 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
         if shared and not SHARED:
             raise NotImplementedError, "JCC was not built with --shared mode support, see JCC's INSTALL file for more information"
     except ImportError:
-        if python_ver < '2.4':
-            raise ImportError, 'setuptools is required when using Python 2.3'
         if shared:
             raise ImportError, 'setuptools is required when using --shared'
         from distutils.core import setup, Extension

@@ -1463,11 +1463,7 @@ PyObject *callSuper(PyTypeObject *type, const char *name, PyObject *args,
         value = PyObject_Call(method, args, NULL);
     else
     {
-#if PY_VERSION_HEX < 0x02040000
-        PyObject *tuple = Py_BuildValue("(O)", args);
-#else
         PyObject *tuple = PyTuple_Pack(1, args);
-#endif   
         value = PyObject_Call(method, tuple, NULL);
         Py_DECREF(tuple);
     }
@@ -1480,11 +1476,7 @@ PyObject *callSuper(PyTypeObject *type, const char *name, PyObject *args,
 PyObject *callSuper(PyTypeObject *type, PyObject *self,
                     const char *name, PyObject *args, int cardinality)
 {
-#if PY_VERSION_HEX < 0x02040000
-    PyObject *tuple = Py_BuildValue("(OO)", type, self);
-#else
     PyObject *tuple = PyTuple_Pack(2, type, self);
-#endif
     PyObject *super = PyObject_Call((PyObject *) &PySuper_Type, tuple, NULL);
     PyObject *method, *value;
 
@@ -1501,11 +1493,7 @@ PyObject *callSuper(PyTypeObject *type, PyObject *self,
         value = PyObject_Call(method, args, NULL);
     else
     {
-#if PY_VERSION_HEX < 0x02040000
-        tuple = Py_BuildValue("(O)", args);
-#else
         tuple = PyTuple_Pack(1, args);
-#endif
         value = PyObject_Call(method, tuple, NULL);
         Py_DECREF(tuple);
     }
