@@ -10,6 +10,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import print_function
 import os, sys, zipfile, _jcc
 
 
@@ -40,11 +41,11 @@ def findClass(className):
     try:
         cls = _findClass(className)
     except:
-        print >>sys.stderr, "While loading", className
+        print("While loading", className, file=sys.stderr)
         raise
 
     if cls is None:
-        raise ValueError, className
+        raise ValueError(className)
 
     return cls
 
@@ -168,7 +169,7 @@ def known(cls, typeset, declares, packages, excludes, generics):
             return known(GenericArrayType.cast_(cls).getGenericComponentType(),
                          typeset, declares, packages, excludes, True)
         else:
-            raise TypeError, (cls, cls.getClass())
+            raise TypeError(cls, cls.getClass())
 
     while cls.isArray():
         cls = cls.getComponentType()
@@ -218,7 +219,7 @@ def addRequiredTypes(cls, typeset, generics):
             gat = GenericArrayType.cast_(cls)
             addRequiredTypes(gat.getGenericComponentType(), typeset, True)
         elif not (TypeVariable.instance_(cls) or WildcardType.instance_(cls)):
-            raise NotImplementedError, repr(cls)
+            raise NotImplementedError(repr(cls))
     else:
         if cls not in typeset:
             typeset.add(cls)
@@ -274,7 +275,7 @@ def find_method(cls, name, params):
             else:
                 method = cls.getMethod(name, params)
             break
-        except JavaError, e:
+        except JavaError as e:
             if (e.getJavaException().getClass().getName() == 'java.lang.NoSuchMethodException'):
                 if not declared:
                     declared = True
@@ -508,7 +509,7 @@ def jcc(args):
                 i += 1
                 imports[args[i]] = ()
             else:
-                raise ValueError, "Invalid argument: %s" %(arg)
+                raise ValueError("Invalid argument: %s" %(arg))
         else:
             if ':' in arg:
                 arg, method = arg.split(':', 1)
@@ -532,11 +533,11 @@ def jcc(args):
         if shared:
             imports = dict((__import__(import_), set()) for import_ in imports)
         else:
-            raise ValueError, "--shared must be used when using --import"
+            raise ValueError("--shared must be used when using --import")
 
     if recompile or not build and (install or dist or egg_info):
         if moduleName is None:
-            raise ValueError, 'module name not specified (use --python)'
+            raise ValueError('module name not specified (use --python)')
         else:
             compile(env, os.path.dirname(args[0]), output, moduleName,
                     install, dist, debug, jars, version,
@@ -618,7 +619,7 @@ def jcc(args):
                     name = cls.getName().rsplit('.', 1)[-1]
                     if not use_full_names:
                         if name in pythonNames:
-                            raise ValueError, (cls, 'python class name already in use, use --rename', name, pythonNames[name])
+                            raise ValueError(cls, 'python class name already in use, use --rename', name, pythonNames[name])
                         else:
                             pythonNames[name] = cls
 
@@ -658,7 +659,7 @@ def jcc(args):
                     name = renames.get(className) or names[-1]
                     if not use_full_names:
                         if name in pythonNames:
-                            raise ValueError, (cls, 'python class name already in use, use --rename', name, pythonNames[name])
+                            raise ValueError(cls, 'python class name already in use, use --rename', name, pythonNames[name])
                         else:
                             pythonNames[name] = cls
                     python(env, out_h, out_cpp,
@@ -721,7 +722,7 @@ def header(env, out, cls, typeset, packages, excludes, generics,
                 pt = ParameterizedType.cast_(interface)
                 interface = Class.cast_(pt.getRawType())
             else:
-                raise NotImplementedError, repr(interface)
+                raise NotImplementedError(repr(interface))
             if superCls and interface.isAssignableFrom(superCls):
                 continue
             if known(interface, typeset, declares, packages, excludes, False):
@@ -936,7 +937,7 @@ def header(env, out, cls, typeset, packages, excludes, generics,
             fieldType = field.getType()
             fieldName = cppname(field.getName())
             if fieldName in methodNames:
-                print >>sys.stderr, "  Warning: renaming static variable '%s' on class %s to '%s%s' since it is shadowed by a method of same name." %(fieldName, '.'.join(names), fieldName, RENAME_FIELD_SUFFIX)
+                print("  Warning: renaming static variable '%s' on class %s to '%s%s' since it is shadowed by a method of same name." %(fieldName, '.'.join(names), fieldName, RENAME_FIELD_SUFFIX), file=sys.stderr)
                 fieldName += RENAME_FIELD_SUFFIX
             if fieldType.isPrimitive():
                 line(out, indent, 'static %s %s;',

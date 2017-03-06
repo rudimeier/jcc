@@ -12,6 +12,7 @@
 #   limitations under the License.
 #
 
+from __future__ import print_function
 import os, sys, platform, shutil, _jcc
 from itertools import izip
 
@@ -673,14 +674,14 @@ def python(env, out_h, out, cls, superCls, names, superNames,
                         elif name + RENAME_METHOD_SUFFIX in allMethods:
                             allMethods[name + RENAME_METHOD_SUFFIX].append(method)
                         else:
-                            print >>sys.stderr, "  Warning: renaming static method '%s' on class %s to '%s%s' since it is shadowed by non-static method of same name." %(name, '.'.join(names), name, RENAME_METHOD_SUFFIX)
+                            print("  Warning: renaming static method '%s' on class %s to '%s%s' since it is shadowed by non-static method of same name." %(name, '.'.join(names), name, RENAME_METHOD_SUFFIX), file=sys.stderr)
                             allMethods[name + RENAME_METHOD_SUFFIX] = [method]
                     else:
                         allMethods[name] = [method]
                 else:
                     if name in allMethods:
                         if Modifier.isStatic(allMethods[name][0].getModifiers()):
-                            print >>sys.stderr, "  Warning: renaming static method '%s' on class %s to '%s%s' since it is shadowed by non-static method of same name." %(name, '.'.join(names), name, RENAME_METHOD_SUFFIX)
+                            print("  Warning: renaming static method '%s' on class %s to '%s%s' since it is shadowed by non-static method of same name." %(name, '.'.join(names), name, RENAME_METHOD_SUFFIX), file=sys.stderr)
                             allMethods[name + RENAME_METHOD_SUFFIX] = allMethods[name]
                             allMethods[name] = [method]
                         else:
@@ -1581,10 +1582,10 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
         from setuptools import setup, Extension
         with_setuptools = True
         if shared and not SHARED:
-            raise NotImplementedError, "JCC was not built with --shared mode support, see JCC's INSTALL file for more information"
+            raise NotImplementedError("JCC was not built with --shared mode support, see JCC's INSTALL file for more information")
     except ImportError:
         if shared:
-            raise ImportError, 'setuptools is required when using --shared'
+            raise ImportError('setuptools is required when using --shared')
         from distutils.core import setup, Extension
         with_setuptools = False
 
@@ -1835,7 +1836,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
                 for import_ in imports
             ] + [("_dll_%s" %(moduleName), '__declspec(dllexport)')]
         else:
-            raise NotImplementedError, "shared mode on %s" %(sys.platform)
+            raise NotImplementedError("shared mode on %s" %(sys.platform))
 
     if arch and sys.platform == 'darwin':
         from distutils import sysconfig
@@ -1867,6 +1868,6 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
     if with_setuptools:
         args['zip_safe'] = False
 
-    print "setup args = %s" % args
+    print("setup args = %s" % args)
 
     setup(**args)

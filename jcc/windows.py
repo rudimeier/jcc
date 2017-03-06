@@ -10,6 +10,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import print_function
 import os, _winreg
 
 
@@ -82,4 +83,4 @@ def add_jvm_dll_directory_to_path():
         os.environ['Path'] = os.pathsep.join(path)
         return True
 
-    raise ValueError, "jvm.dll could not be found"
+    raise ValueError("jvm.dll could not be found")

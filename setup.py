@@ -10,6 +10,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import print_function
 import os, sys, platform, subprocess
 
 jcc_ver = '2.23'
@@ -350,11 +351,11 @@ def main(debug):
             os.makedirs('jcc/classes')
         try:
             process = Popen(args, stderr=PIPE)
-        except Exception, e:
-            raise type(e), "%s: %s" %(e, args)
+        except Exception as e:
+            raise type(e)("%s: %s" %(e, args))
         process.wait()
         if process.returncode != 0:
-            raise OSError, process.stderr.read()
+            raise OSError(process.stderr.read())
         package_data.append('classes/org/apache/jcc/PythonVM.class')
         package_data.append('classes/org/apache/jcc/PythonException.class')
 
@@ -362,11 +363,11 @@ def main(debug):
         args.extend(('-d', 'javadoc', '-sourcepath', 'java', 'org.apache.jcc'))
         try:
             process = Popen(args, stderr=PIPE)
-        except Exception, e:
-            raise type(e), "%s: %s" %(e, args)
+        except Exception as e:
+            raise type(e)("%s: %s" %(e, args))
         process.wait()
         if process.returncode != 0:
-            raise OSError, process.stderr.read()
+            raise OSError(process.stderr.read())
 
     extensions.append(Extension('jcc._jcc',
                                 extra_compile_args=cflags,
