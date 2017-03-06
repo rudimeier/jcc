@@ -12,38 +12,6 @@
 
 import os, sys, zipfile, _jcc
 
-python_ver = '%d.%d.%d' %(sys.version_info[0:3])
-if python_ver < '2.4':
-    from sets import Set as set
-
-    def split_pkg(string, sep):
-        parts = string.split(sep)
-        if len(parts) > 1:
-            return sep.join(parts[:-1]), parts[-1]
-        return parts
-
-    def sort(list, fn=None, key=None):
-        if fn:
-            list.sort(fn)
-        elif key:
-            def fn(x, y):
-                return cmp(key(x), key(y))
-            list.sort(fn)
-        else:
-            list.sort()
-
-else:
-    def split_pkg(string, sep):
-        return string.rsplit(sep, 1)
-
-    def sort(list, fn=None, key=None):
-        if fn:
-            list.sort(cmp=fn)
-        elif key:
-            list.sort(key=key)
-        else:
-            list.sort()
-
 
 class JavaError(Exception):
 
@@ -216,7 +184,7 @@ def known(cls, typeset, declares, packages, excludes, generics):
         declares.add(cls)
         return True
 
-    if split_pkg(className, '.')[0] in packages:
+    if className.rsplit('.', 1)[0] in packages:
         typeset.add(cls)
         declares.add(cls)
         cls = cls.getSuperclass()
@@ -647,7 +615,7 @@ def jcc(args):
             done.update(importset)
             if moduleName:
                 for cls in importset:
-                    name = split_pkg(cls.getName(), '.')[-1]
+                    name = cls.getName().rsplit('.', 1)[-1]
                     if not use_full_names:
                         if name in pythonNames:
                             raise ValueError, (cls, 'python class name already in use, use --rename', name, pythonNames[name])
@@ -814,7 +782,7 @@ def header(env, out, cls, typeset, packages, excludes, generics,
                     break
             else:
                 constructors.append(constructor)
-    sort(constructors, key=lambda x: len(x.getParameterTypes()))
+    constructors.sort(key=lambda x: len(x.getParameterTypes()))
 
     methods = {}
     protectedMethods = []
@@ -850,14 +818,8 @@ def header(env, out, cls, typeset, packages, excludes, generics,
         elif Modifier.isProtected(modifiers):
             protectedMethods.append(method)
 
-    def _compare(m0, m1):
-        value = cmp(m0.getName(), m1.getName())
-        if value == 0:
-            value = len(m0.getParameterTypes()) - len(m1.getParameterTypes())
-        return value
-
     methods = methods.values()
-    sort(methods, fn=_compare)
+    methods.sort(key=lambda x: (x.getName(), len(x.getParameterTypes())))
     methodNames = set([cppname(method.getName()) for method in methods])
 
     for constructor in constructors:
@@ -892,8 +854,8 @@ def header(env, out, cls, typeset, packages, excludes, generics,
                 fields.append(field)
             else:
                 instanceFields.append(field)
-    sort(fields, key=lambda x: x.getName())
-    sort(instanceFields, key=lambda x: x.getName())
+    fields.sort(key=lambda x: x.getName())
+    instanceFields.sort(key=lambda x: x.getName())
 
     line(out)
     superNames = superClsName.split('.')

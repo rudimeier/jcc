@@ -18,7 +18,7 @@ from itertools import izip
 from cpp import PRIMITIVES, INDENT, HALF_INDENT
 from cpp import RENAME_METHOD_SUFFIX, RENAME_FIELD_SUFFIX
 from cpp import cppname, cppnames, absname, typename, findClass
-from cpp import line, signature, find_method, split_pkg, sort
+from cpp import line, signature, find_method
 from cpp import Modifier, Class, Method
 from cpp import getActualTypeArguments, getTypeParameters
 from config import INCLUDES, CFLAGS, DEBUG_CFLAGS, LFLAGS, IMPLIB_LFLAGS, \
@@ -706,12 +706,12 @@ def python(env, out_h, out, cls, superCls, names, superNames,
     properties = set([name for name in propMethods.iterkeys()
                       if name not in allMethods])
     propMethods = [(name, propMethods[name]) for name in properties]
-    sort(propMethods, key=lambda x: x[0])
+    propMethods.sort(key=lambda x: x[0])
 
     extMethods = extMethods.items()
-    sort(extMethods, key=lambda x: x[0])
+    extMethods.sort(key=lambda x: x[0])
     allMethods = allMethods.items()
-    sort(allMethods, key=lambda x: x[0])
+    allMethods.sort(key=lambda x: x[0])
 
     iteratorMethod = None
     iteratorExt = False
@@ -732,7 +732,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
 
     for name, methods in allMethods:
         args, x, cardinality = methodargs(methods, superMethods)
-        sort(methods, key=lambda x: len(x.getParameterTypes()))
+        methods.sort(key=lambda x: len(x.getParameterTypes()))
         method = methods[0]
         modifiers = method.getModifiers()
         if name == 'iterator' and iteratorMethod is None:
@@ -770,7 +770,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
 
     for name, methods in extMethods:
         args, x, cardinality = methodargs(methods, superMethods)
-        sort(methods, key=lambda x: len(x.getParameterTypes()))
+        methods.sort(key=lambda x: len(x.getParameterTypes()))
         method = methods[0]
         modifiers = method.getModifiers()
         if name == 'iterator' and iteratorMethod is None:
@@ -1308,7 +1308,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
             line(out)
             getter = None
             setters = []
-            sort(methods, key=lambda x: x.getName())
+            methods.sort(key=lambda x: x.getName())
             for method in methods:
                 methodName = method.getName()
                 if not getter and (methodName.startswith('get') or
@@ -1433,7 +1433,7 @@ def package(out, allInOne, cppdir, namespace, names, use_full_names):
     types = []
 
     namespaces = namespace.items()
-    sort(namespaces, key=lambda x: x[0])
+    namespaces.sort(key=lambda x: x[0])
     for name, entries in namespaces:
         if entries is True:
             if names:
