@@ -29,10 +29,6 @@ try:
 except ImportError:
     pass
 
-python_ver = '%d.%d.%d' %(sys.version_info[0:3])
-if python_ver < '2.4':
-    from sets import Set as set
-
 
 RESULTS = { 'boolean': 'Py_RETURN_BOOL(%s);',
             'byte': 'return PyInt_FromLong((long) %s);',
@@ -128,7 +124,7 @@ def parseArgs(params, current, generics, genericParams=None):
             while cls.isArray():
                 cls = cls.getComponentType()
             if getTypeParameters(cls):
-                ns, sep, n = rpartition(typename(cls, current, False), '::')
+                ns, sep, n = typename(cls, current, False).rpartition('::')
                 return ', &a%d, &p%d, %s%st_%s::parameters_' %(i, i, ns, sep, n)
         return ', &a%d' %(i)
 
@@ -221,17 +217,6 @@ def construct(out, indent, cls, inCase, constructor, names, generics):
         line(out, indent, '}')
 
 
-def rpartition(string, sep):
-
-    if python_ver >= '2.5.0':
-        return string.rpartition(sep)
-    else:
-        parts = split_pkg(string, sep)
-        if len(parts) == 1:
-            return ('', '', parts[0])
-        return (parts[0], sep, parts[1])
-
-
 def fieldValue(cls, value, fieldType):
 
     if fieldType.isArray():
@@ -243,14 +228,14 @@ def fieldValue(cls, value, fieldType):
         elif fieldType.getName() == 'java.lang.String':
             result = 'JArray<jstring>(%s->this$).wrap()'
         else:
-            parts = rpartition(typename(fieldType, cls, False), '::')
+            parts = typename(fieldType, cls, False).rpartition('::')
             result = 'JArray<jobject>(%%s->this$).wrap(%s%st_%s::wrap_jobject)' %(parts)
 
     elif fieldType.getName() == 'java.lang.String':
         result = 'j2p(*%s)'
 
     elif not fieldType.isPrimitive():
-        parts = rpartition(typename(fieldType, cls, False), '::')
+        parts = typename(fieldType, cls, False).rpartition('::')
         result = '%s%st_%s::wrap_Object(*%%s)' %(parts)
 
     else:
@@ -278,10 +263,10 @@ def returnValue(cls, returnType, value, genericRT=None, typeParams=None):
         elif returnType.getName() == 'java.lang.String':
             return 'return JArray<jstring>(%s.this$).wrap();' %(value)
 
-        ns, sep, n = rpartition(typename(returnType, cls, False), '::')
+        ns, sep, n = typename(returnType, cls, False).rpartition('::')
         return 'return JArray<jobject>(%s.this$).wrap(%s%st_%s::wrap_jobject);' %(value, ns, sep, n)
 
-    ns, sep, n = rpartition(typename(returnType, cls, False), '::')
+    ns, sep, n = typename(returnType, cls, False).rpartition('::')
     if genericRT is not None:
         if ParameterizedType.instance_(genericRT):
             genericRT = ParameterizedType.cast_(genericRT)
@@ -452,11 +437,11 @@ def wrapper_typename(returnType, cls):
         if componentType.isPrimitive():
             return "t_JArrayWrapper< %s >" %(componentName)
 
-        ns, sep, n = rpartition(componentName, '::')
+        ns, sep, n = componentName.rpartition('::')
         return "t_JArrayWrapper< jobject,%s%st_%s >" %(ns, sep, n)
 
     returnName = typename(returnType, cls, False)
-    ns, sep, n = rpartition(returnName, '::')
+    ns, sep, n = returnName.rpartition('::')
     return "%s%st_%s" %(ns, sep, n)
 
 
@@ -502,13 +487,13 @@ def extension(env, out, indent, cls, names, name, count, method, generics):
             elif param.getName() == 'java.lang.String':
                 code = 'JArray<jstring>(%s).wrap()'
             else:
-                parts = rpartition(typename(param, cls, False), '::')
+                parts = typename(param, cls, False).rpartition('::')
                 code = 'JArray<jobject>(%%s).wrap(%s%st_%s::wrap_jobject)' %(parts)
             sig, decref = 'O', True
         elif param.getName() == 'java.lang.String':
             sig, code, decref = 'O', 'j2p(%%s))', True
         else:
-            parts = rpartition(typename(param, cls, False), '::')
+            parts = typename(param, cls, False).rpartition('::')
             sig, code, decref = 'O', '%s%st_%s::wrap_Object(%s%s%s(%%s))' %(parts*2), True
         if sig == 'O':
             line(out, indent, 'PyObject *o%d = %s;', i, code %('a%d' %(i)))
@@ -936,7 +921,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
     elif nextElementMethod and enumeration.isAssignableFrom(cls):
         tp_iter = 'PyObject_SelfIter'
         returnName = typename(nextElementMethod.getReturnType(), cls, False)
-        ns, sep, n = rpartition(returnName, '::')
+        ns, sep, n = returnName.rpartition('::')
         if nextElementExt:
             tp_iternext = 'get_extension_nextElement'
         else:
