@@ -123,9 +123,9 @@ def argnames(params, cls):
 
     count = len(params)
     decls = ', '.join(["%s a%d" %(typename(params[i], cls, True), i)
-                       for i in xrange(count)])
+                       for i in range(count)])
     args = ', '.join(['a%d%s' %(i, not params[i].isPrimitive() and '.this$' or '')
-                      for i in xrange(count)])
+                      for i in range(count)])
 
     return decls, ', ' + args
 

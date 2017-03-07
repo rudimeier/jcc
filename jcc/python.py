@@ -139,12 +139,12 @@ def parseArgs(params, current, generics, genericParams=None):
         chk = ''.join([checkarg(param) for param in params])
 
     return (sig, chk,
-            ''.join([callarg(params[i], i) for i in xrange(len(params))]))
+            ''.join([callarg(params[i], i) for i in range(len(params))]))
 
 
 def declareVars(out, indent, params, current, generics, typeParams):
 
-    for i in xrange(len(params)):
+    for i in range(len(params)):
         param = params[i]
         line(out, indent, '%s a%d%s;',
              typename(param, current, False), i,
@@ -182,7 +182,7 @@ def construct(out, indent, cls, inCase, constructor, names, generics):
         indent += 1
 
     line(out, indent, 'INT_CALL(object = %s(%s));',
-         cppname(names[-1]), ', '.join(['a%d' %(i) for i in xrange(count)]))
+         cppname(names[-1]), ', '.join(['a%d' %(i) for i in range(count)]))
     line(out, indent, 'self->object = object;')
 
     if generics:
@@ -362,10 +362,10 @@ def call(out, indent, cls, inCase, method, names, cardinality, isExtension,
     if Modifier.isStatic(modifiers):
         line(out, indent, 'OBJ_CALL(%s%s::%s(%s));',
              result, absname(cppnames(names)), name,
-             ', '.join(['a%d' %(i) for i in xrange(count)]))
+             ', '.join(['a%d' %(i) for i in range(count)]))
     else:
         line(out, indent, 'OBJ_CALL(%sself->object.%s(%s));',
-             result, name, ', '.join(['a%d' %(i) for i in xrange(count)]))
+             result, name, ', '.join(['a%d' %(i) for i in range(count)]))
 
     if isExtension and name == 'clone' and Modifier.isNative(modifiers):
         line(out)
@@ -423,7 +423,7 @@ def jniargs(params):
 
     count = len(params)
     decls = ', '.join(['%s a%d' %(jniname(params[i]), i)
-                       for i in xrange(count)])
+                       for i in range(count)])
     if decls:
         return ', ' + decls
 
