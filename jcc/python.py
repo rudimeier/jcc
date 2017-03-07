@@ -1598,6 +1598,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
 
     out = open(os.path.join(modulePath, '__init__.py'), 'w')
     line(out)
+    line(out, 0, "from __future__ import absolute_import")
     if shared:
         line(out, 0, "import os, sys")
         line(out)
@@ -1605,11 +1606,11 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
         if find_jvm_dll:
             line(out, 1, "from jcc.windows import add_jvm_dll_directory_to_path")
             line(out, 1, "add_jvm_dll_directory_to_path()")
-        line(out, 1, "import jcc, %s", extname)
-        line(out, 0, "else:")
-        line(out, 1, "import %s", extname)
+        line(out, 1, "import jcc")
+        line(out, 0, "from . import %s", extname)
     else:
-        line(out, 0, 'import os, %s', extname)
+        line(out, 0, "import os")
+        line(out, 0, "from . import %s", extname)
     line(out)
     line(out, 0, '__dir__ = os.path.abspath(os.path.dirname(__file__))')
 
@@ -1699,7 +1700,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
     line(out)
     for import_ in imports:
         line(out, 0, 'from %s._%s import *', import_.__name__, import_.__name__)
-    line(out, 0, 'from %s import *', extname)
+    line(out, 0, 'from .%s import *', extname)
     if use_full_names:
         line(out, 0, 'from java.io import PrintWriter, StringWriter')
     out.close()
