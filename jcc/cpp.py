@@ -10,8 +10,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import absolute_import
 from __future__ import print_function
-import os, sys, zipfile, _jcc
+import os, sys, zipfile
+from . import _jcc
 
 
 class JavaError(Exception):
@@ -32,8 +34,8 @@ class InvalidArgsError(Exception):
 
 
 _jcc._set_exception_types(JavaError, InvalidArgsError)
-from _jcc import findClass as _findClass
-from _jcc import *
+from ._jcc import findClass as _findClass
+from ._jcc import *
 
 
 def findClass(className):
@@ -417,23 +419,23 @@ def jcc(args):
                 i += 1
                 initvm_args['maxheap'] = args[i]
             elif arg == '--python':
-                from python import python, module
+                from .python import python, module
                 i += 1
                 moduleName = args[i]
             elif arg == '--module':
                 i += 1
                 modules.append(args[i])
             elif arg == '--build':
-                from python import compile
+                from .python import compile
                 build = True
             elif arg == '--install':
-                from python import compile
+                from .python import compile
                 install = True
             elif arg == '--compile':
-                from python import compile
+                from .python import compile
                 recompile = True
             elif arg == '--egg-info':
-                from python import compile
+                from .python import compile
                 egg_info = True
             elif arg == '--extra-setup-arg':
                 i += 1
@@ -483,10 +485,10 @@ def jcc(args):
             elif arg == '--shared':
                 shared = True
             elif arg == '--bdist':
-                from python import compile
+                from .python import compile
                 dist = True
             elif arg == '--wininst':
-                from python import compile
+                from .python import compile
                 wininst = True
                 dist = True
             elif arg == '--compiler':

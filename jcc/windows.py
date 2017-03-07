@@ -10,21 +10,22 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import absolute_import
 from __future__ import print_function
-import os, _winreg
+import os, winreg
 
 
 class WindowsRegistry(object):
 
     def __init__(self):
-        self.handle = _winreg.ConnectRegistry(None, _winreg.HKEY_LOCAL_MACHINE)
+        self.handle = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
 
     def get(self, key, name):
 
         handle = None
         try:
-            handle = _winreg.OpenKey(self.handle, key)
-            return _winreg.QueryValueEx(handle, name)[0]
+            handle = winreg.OpenKey(self.handle, key)
+            return winreg.QueryValueEx(handle, name)[0]
         finally:
             if handle is not None:
                 handle.Close()

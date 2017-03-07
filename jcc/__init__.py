@@ -12,12 +12,13 @@
 
 # jcc package
 
+from __future__ import absolute_import
 import os, sys
 
 if sys.platform == 'win32':
 
     if '--find-jvm-dll' in sys.argv:
-        from windows import add_jvm_dll_directory_to_path
+        from .windows import add_jvm_dll_directory_to_path
         add_jvm_dll_directory_to_path()
 
     from jcc.config import SHARED
@@ -34,7 +35,7 @@ from jcc import _jcc
 if __name__ == '__main__':
     import jcc.__main__
 else:
-    from _jcc import initVM
+    from ._jcc import initVM
 
 CLASSPATH=os.path.join(os.path.abspath(os.path.dirname(__file__)), "classes")
 _jcc.CLASSPATH = CLASSPATH

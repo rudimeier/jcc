@@ -12,20 +12,22 @@
 #   limitations under the License.
 #
 
+from __future__ import absolute_import
 from __future__ import print_function
-import os, sys, platform, shutil, _jcc
+import os, sys, platform, shutil
 
-from cpp import PRIMITIVES, INDENT, HALF_INDENT
-from cpp import RENAME_METHOD_SUFFIX, RENAME_FIELD_SUFFIX
-from cpp import cppname, cppnames, absname, typename, findClass
-from cpp import line, signature, find_method
-from cpp import Modifier, Class, Method
-from cpp import getActualTypeArguments, getTypeParameters
-from config import INCLUDES, CFLAGS, DEBUG_CFLAGS, LFLAGS, IMPLIB_LFLAGS, \
+from . import _jcc
+from .cpp import PRIMITIVES, INDENT, HALF_INDENT
+from .cpp import RENAME_METHOD_SUFFIX, RENAME_FIELD_SUFFIX
+from .cpp import cppname, cppnames, absname, typename, findClass
+from .cpp import line, signature, find_method
+from .cpp import Modifier, Class, Method
+from .cpp import getActualTypeArguments, getTypeParameters
+from .config import INCLUDES, CFLAGS, DEBUG_CFLAGS, LFLAGS, IMPLIB_LFLAGS, \
     SHARED, VERSION as JCC_VER
 
 try:
-    from cpp import ParameterizedType, TypeVariable
+    from .cpp import ParameterizedType, TypeVariable
 except ImportError:
     pass
 
