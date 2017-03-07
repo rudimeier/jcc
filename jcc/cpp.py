@@ -547,7 +547,8 @@ def jcc(args):
                     egg_info, extra_setup_args)
     else:
         if imports:
-            def walk((include, importset), dirname, names):
+            def walk(args, dirname, names):
+                (include, importset) = args
                 for name in names:
                     if name.endswith('.h'):
                         className = os.path.join(dirname[len(include) + 1:],
