@@ -324,7 +324,7 @@ def signature(fn, argsOnly=False):
 
 def forward(out, namespace, indent):
 
-    for name, entries in namespace.iteritems():
+    for name, entries in namespace.items():
         if entries is True:
             line(out, indent, 'class %s;', cppname(name))
         else:
@@ -555,7 +555,7 @@ def jcc(args):
                         if os.path.sep != '/':
                             className = className.replace(os.path.sep, '/')
                         importset.add(findClass(className))
-            for import_, importset in imports.iteritems():
+            for import_, importset in imports.items():
                 env._addClassPath(import_.CLASSPATH)
                 include = os.path.join(import_.__dir__, 'include')
                 os.path.walk(include, walk, (include, importset))
@@ -612,7 +612,7 @@ def jcc(args):
 
         done = set()
         pythonNames = {}
-        for importset in imports.itervalues():
+        for importset in imports.values():
             done.update(importset)
             if moduleName:
                 for cls in importset:
@@ -819,7 +819,7 @@ def header(env, out, cls, typeset, packages, excludes, generics,
         elif Modifier.isProtected(modifiers):
             protectedMethods.append(method)
 
-    methods = methods.values()
+    methods = list(methods.values())
     methods.sort(key=lambda x: (x.getName(), len(x.getParameterTypes())))
     methodNames = set([cppname(method.getName()) for method in methods])
 

@@ -14,7 +14,6 @@
 
 from __future__ import print_function
 import os, sys, platform, shutil, _jcc
-from itertools import izip
 
 from cpp import PRIMITIVES, INDENT, HALF_INDENT
 from cpp import RENAME_METHOD_SUFFIX, RENAME_FIELD_SUFFIX
@@ -131,9 +130,9 @@ def parseArgs(params, current, generics, genericParams=None):
 
     if genericParams:
         sig = ''.join([signature(param, genericParam)
-                       for param, genericParam in izip(params, genericParams)])
+                       for param, genericParam in zip(params, genericParams)])
         chk = ''.join([checkarg(param, genericParam)
-                       for param, genericParam in izip(params, genericParams)])
+                       for param, genericParam in zip(params, genericParams)])
     else:
         sig = ''.join([signature(param) for param in params])
         chk = ''.join([checkarg(param) for param in params])
@@ -704,14 +703,14 @@ def python(env, out_h, out, cls, superCls, names, superNames,
                         propMethods.setdefault(name[2].lower() + name[3:],
                                                []).append(method)
 
-    properties = set([name for name in propMethods.iterkeys()
+    properties = set([name for name in propMethods.keys()
                       if name not in allMethods])
     propMethods = [(name, propMethods[name]) for name in properties]
     propMethods.sort(key=lambda x: x[0])
 
-    extMethods = extMethods.items()
+    extMethods = list(extMethods.items())
     extMethods.sort(key=lambda x: x[0])
-    allMethods = allMethods.items()
+    allMethods = list(allMethods.items())
     allMethods.sort(key=lambda x: x[0])
 
     iteratorMethod = None
@@ -1426,7 +1425,7 @@ def package(out, allInOne, cppdir, namespace, names, use_full_names):
     packages = []
     types = []
 
-    namespaces = namespace.items()
+    namespaces = list(namespace.items())
     namespaces.sort(key=lambda x: x[0])
     for name, entries in namespaces:
         if entries is True:
@@ -1531,7 +1530,7 @@ def module(out, allInOne, classes, imports, cppdir, moduleName,
         out_init = open(os.path.join(cppdir, '__init__.cpp'), 'w')
     namespaces = {}
     for cls in classes:
-        for importset in imports.itervalues():
+        for importset in imports.values():
             if cls in importset:
                 break
         else:
