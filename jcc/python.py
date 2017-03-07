@@ -1547,6 +1547,8 @@ def module(out, allInOne, classes, imports, cppdir, moduleName,
     else:
         package(None, False, cppdir, namespaces, (), use_full_names)
 
+    have_PyModule_Create = (sys.version_info[0] >= 3)
+
     line(out)
     line(out, 0, 'PyObject *initJCC(PyObject *module);')
     line(out, 0, 'void __install__(PyObject *module);')
@@ -1555,11 +1557,25 @@ def module(out, allInOne, classes, imports, cppdir, moduleName,
     line(out)
     line(out, 0, 'extern "C" {')
 
-    line(out)
-    line(out, 1, 'void init%s(void)', extname)
-    line(out, 1, '{')
-    line(out, 2, 'PyObject *module = Py_InitModule3("%s", jcc_funcs, "");',
-         extname);
+    if have_PyModule_Create:
+        line(out, 1, 'static struct PyModuleDef %s_def = {', extname)
+        line(out, 2, 'PyModuleDef_HEAD_INIT,')
+        line(out, 2, '"%s",', extname);
+        line(out, 2, '"%s module",', extname);
+        line(out, 2, '0,')
+        line(out, 2, 'jcc_funcs,');
+        line(out, 1, '};')
+        line(out)
+        line(out, 1, 'PyObject *PyInit_%s(void)', extname)
+        line(out, 1, '{')
+        line(out, 2, 'PyObject *module = PyModule_Create(&%s_def);', extname);
+    else:
+        line(out)
+        line(out, 1, 'void init%s(void)', extname)
+        line(out, 1, '{')
+        line(out, 2, 'PyObject *module = Py_InitModule3("%s", jcc_funcs, "");',
+             extname);
+
     line(out)
     line(out, 2, 'initJCC(module);')
     line(out)
@@ -1569,6 +1585,9 @@ def module(out, allInOne, classes, imports, cppdir, moduleName,
     line(out, 2, 'INSTALL_TYPE(FinalizerProxy, module);')
     line(out, 2, '_install_jarray(module);')
     line(out, 2, '__install__(module);')
+    if have_PyModule_Create:
+        line(out)
+        line(out, 2, 'return module;')
     line(out, 1, '}')
     line(out, 0, '}')
 

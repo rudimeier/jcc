@@ -49,9 +49,29 @@ PyObject *__initialize__(PyObject *module, PyObject *args, PyObject *kwds)
 
 extern "C" {
 
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef _jccmodule = {
+        PyModuleDef_HEAD_INIT,   /* m_base     */
+        "_jcc",                  /* m_name     */
+        "_jcc module",           /* m_doc      */
+        0,                       /* m_size     */
+        jcc_funcs,               /* m_methods  */
+        0,                       /* m_reload   */
+        0,                       /* m_traverse */
+        0,                       /* m_clear    */
+        0,                       /* m_free     */
+    };
+
+    PyObject *PyInit__jcc(void)
+    {
+        PyObject *m = PyModule_Create(&_jccmodule);
+        if (!m)
+            return NULL;
+#else
     void init_jcc(void)
     {
         PyObject *m = Py_InitModule3("_jcc", jcc_funcs, "_jcc");
+#endif
 
         initJCC(m);
 
@@ -59,5 +79,9 @@ extern "C" {
         INSTALL_TYPE(ConstVariableDescriptor, m);
         java::lang::__install__(m);
         java::io::__install__(m);
+
+#if PY_MAJOR_VERSION >= 3
+        return m;
+#endif
     }
 }
