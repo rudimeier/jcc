@@ -1408,7 +1408,7 @@ def python(env, out_h, out, cls, superCls, names, superNames,
 def package(out, allInOne, cppdir, namespace, names, use_full_names):
 
     if not allInOne:
-        out = file(os.path.join(os.path.join(cppdir, *names),
+        out = open(os.path.join(os.path.join(cppdir, *names),
                                 '__init__.cpp'), 'w')
 
     if allInOne and not names or not allInOne:
@@ -1528,7 +1528,7 @@ def module(out, allInOne, classes, imports, cppdir, moduleName,
     line(out, 0, '#include "jccfuncs.h"')
 
     if allInOne:
-        out_init = file(os.path.join(cppdir, '__init__.cpp'), 'w')
+        out_init = open(os.path.join(cppdir, '__init__.cpp'), 'w')
     namespaces = {}
     for cls in classes:
         for importset in imports.itervalues():
@@ -1595,7 +1595,7 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
     if not os.path.isdir(modulePath):
         os.makedirs(modulePath)
 
-    out = file(os.path.join(modulePath, '__init__.py'), 'w')
+    out = open(os.path.join(modulePath, '__init__.py'), 'w')
     line(out)
     if shared:
         line(out, 0, "import os, sys")

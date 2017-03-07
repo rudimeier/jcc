@@ -604,11 +604,11 @@ def jcc(args):
             if not os.path.isdir(cppdir):
                 os.makedirs(cppdir)
             if wrapperFiles <= 1:
-                out_cpp = file(os.path.join(cppdir, '__wrap__.cpp'), 'w')
+                out_cpp = open(os.path.join(cppdir, '__wrap__.cpp'), 'w')
             else:
                 fileCount = 1
                 fileName = '__wrap%02d__.cpp' %(fileCount)
-                out_cpp = file(os.path.join(cppdir, fileName), 'w')
+                out_cpp = open(os.path.join(cppdir, fileName), 'w')
 
         done = set()
         pythonNames = {}
@@ -637,7 +637,7 @@ def jcc(args):
                     os.makedirs(dir)
 
                 fileName = os.path.join(dir, names[-1])
-                out_h = file(fileName + '.h', "w")
+                out_h = open(fileName + '.h', "w")
                 line(out_h, 0, '#ifndef %s_H', '_'.join(names))
                 line(out_h, 0, '#define %s_H', '_'.join(names))
 
@@ -649,7 +649,7 @@ def jcc(args):
                            _dll_export)
 
                 if not allInOne:
-                    out_cpp = file(fileName + '.cpp', 'w')
+                    out_cpp = open(fileName + '.cpp', 'w')
                 names, superNames = code(env, out_cpp,
                                          cls, superCls, constructors,
                                          methods, protectedMethods,
@@ -682,7 +682,7 @@ def jcc(args):
                         out_cpp.close()
                         fileCount += 1
                         fileName = '__wrap%02d__.cpp' %(fileCount)
-                        out_cpp = file(os.path.join(cppdir, fileName), 'w')
+                        out_cpp = open(os.path.join(cppdir, fileName), 'w')
                         classCount = 0
                         
             done.update(todo)
@@ -692,7 +692,7 @@ def jcc(args):
             out_cpp.close()
 
         if moduleName:
-            out = file(os.path.join(cppdir, moduleName) + '.cpp', 'w')
+            out = open(os.path.join(cppdir, moduleName) + '.cpp', 'w')
             module(out, allInOne, done, imports, cppdir, moduleName,
                    shared, generics, use_full_names)
             out.close()
