@@ -32,18 +32,20 @@ except ImportError:
     pass
 
 
+PyInt_FromLong = "PyInt_FromLong" if (sys.version_info[0] < 3) else "PyLong_FromLong"
+
 RESULTS = { 'boolean': 'Py_RETURN_BOOL(%s);',
-            'byte': 'return PyInt_FromLong((long) %s);',
+            'byte': 'return '+PyInt_FromLong+'((long) %s);',
             'char': 'return PyUnicode_FromUnicode((Py_UNICODE *) &%s, 1);',
             'double': 'return PyFloat_FromDouble((double) %s);',
             'float': 'return PyFloat_FromDouble((double) %s);',
-            'int': 'return PyInt_FromLong((long) %s);',
+            'int': 'return '+PyInt_FromLong+'((long) %s);',
             'long': 'return PyLong_FromLongLong((PY_LONG_LONG) %s);',
-            'short': 'return PyInt_FromLong((long) %s);',
+            'short': 'return '+PyInt_FromLong+'((long) %s);',
             'java.lang.String': 'return j2p(%s);' }
 
 CALLARGS = { 'boolean': ('O', '(%s ? Py_True : Py_False)', False),
-             'byte': ('O', 'PyInt_FromLong(%s)', True),
+             'byte': ('O', PyInt_FromLong+'(%s)', True),
              'char': ('O', 'PyUnicode_FromUnicode((Py_UNICODE *) &%s, 1)', True),
              'double': ('d', '(double) %s', False),
              'float': ('f', '(float) %s', False),

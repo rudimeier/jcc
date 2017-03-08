@@ -162,4 +162,17 @@ PyObject *t_name::wrap_jobject(const jobject& object)                   \
     }
 
 
+#if PY_MAJOR_VERSION < 3
+
+#else /* PY_MAJOR_VERSION < 3 */
+
+#define PyInt_AsLong                PyLong_AsLong
+#define PyInt_AS_LONG               PyLong_AS_LONG
+#define PyInt_Check                 PyLong_Check
+#define PyInt_CheckExact            PyLong_CheckExact
+#define PyInt_FromLong              PyLong_FromLong
+
+#endif /* PY_MAJOR_VERSION < 3 */
+
+
 #endif /* _macros_H */
