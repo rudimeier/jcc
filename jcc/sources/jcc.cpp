@@ -128,7 +128,7 @@ static void t_jccenv_dealloc(t_jccenv *self)
     self->ob_type->tp_free((PyObject *) self);
 }
 
-static void add_option(char *name, char *value, JavaVMOption *option)
+static void add_option(char *name, const char *value, JavaVMOption *option)
 {
     char *buf = new char[strlen(name) + strlen(value) + 1];
 
@@ -137,7 +137,8 @@ static void add_option(char *name, char *value, JavaVMOption *option)
 }
 
 #ifdef _jcc_lib
-static void add_paths(char *name, char *p0, char *p1, JavaVMOption *option)
+static void add_paths(char *name, const char *p0, const char *p1,
+                      JavaVMOption *option)
 {
 #if defined(_MSC_VER) || defined(__WIN32)
     char pathsep = ';';
