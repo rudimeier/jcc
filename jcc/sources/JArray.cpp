@@ -582,14 +582,22 @@ public:
             (ssizeargfunc) (PyObject *(*)(U *, Py_ssize_t)) seq_repeat<U>;
         seq_methods.sq_item =
             (ssizeargfunc) (PyObject *(*)(U *, Py_ssize_t)) seq_get<U>;
+#if PY_MAJOR_VERSION < 3
         seq_methods.sq_slice =
             (ssizessizeargfunc) (PyObject *(*)(U *, Py_ssize_t, Py_ssize_t))
             seq_getslice<U>;
+#else
+        seq_methods.was_sq_slice = NULL;
+#endif
         seq_methods.sq_ass_item =
             (ssizeobjargproc) (int (*)(U *, Py_ssize_t, PyObject *)) seq_set<U>;
+#if PY_MAJOR_VERSION < 3
         seq_methods.sq_ass_slice =
             (ssizessizeobjargproc) (int (*)(U *, Py_ssize_t, Py_ssize_t,
                                             PyObject *)) seq_setslice<U>;
+#else
+        seq_methods.was_sq_ass_slice = NULL;
+#endif
         seq_methods.sq_contains =
             (objobjproc) (int (*)(U *, PyObject *)) seq_contains<U>;
         seq_methods.sq_inplace_concat = NULL;

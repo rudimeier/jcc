@@ -44,10 +44,14 @@ static PyObject *t_fp_seq_get(t_fp *self, Py_ssize_t n);
 static int t_fp_seq_contains(t_fp *self, PyObject *value);
 static PyObject *t_fp_seq_concat(t_fp *self, PyObject *arg);
 static PyObject *t_fp_seq_repeat(t_fp *self, Py_ssize_t n);
+#if PY_MAJOR_VERSION < 3
 static PyObject *t_fp_seq_getslice(t_fp *self, Py_ssize_t low, Py_ssize_t high);
+#endif
 static int t_fp_seq_set(t_fp *self, Py_ssize_t i, PyObject *value);
+#if PY_MAJOR_VERSION < 3
 static int t_fp_seq_setslice(t_fp *self, Py_ssize_t low,
                              Py_ssize_t high, PyObject *arg);
+#endif
 static PyObject *t_fp_seq_inplace_concat(t_fp *self, PyObject *arg);
 static PyObject *t_fp_seq_inplace_repeat(t_fp *self, Py_ssize_t n);
 
@@ -104,9 +108,17 @@ static PySequenceMethods t_fp_as_sequence = {
     (binaryfunc)t_fp_seq_concat,              /* sq_concat */
     (ssizeargfunc)t_fp_seq_repeat,            /* sq_repeat */
     (ssizeargfunc)t_fp_seq_get,               /* sq_item */
+#if PY_MAJOR_VERSION < 3
     (ssizessizeargfunc)t_fp_seq_getslice,     /* sq_slice */
+#else
+    0,                                        /* was_sq_slice */
+#endif
     (ssizeobjargproc)t_fp_seq_set,            /* sq_ass_item */
+#if PY_MAJOR_VERSION < 3
     (ssizessizeobjargproc)t_fp_seq_setslice,  /* sq_ass_slice */
+#else
+    0,                                        /* was_sq_ass_slice */
+#endif
     (objobjproc)t_fp_seq_contains,            /* sq_contains */
     (binaryfunc)t_fp_seq_inplace_concat,      /* sq_inplace_concat */
     (ssizeargfunc)t_fp_seq_inplace_repeat,    /* sq_inplace_repeat */
@@ -253,21 +265,25 @@ static PyObject *t_fp_seq_repeat(t_fp *self, Py_ssize_t n)
     return PySequence_Repeat(self->object, n);
 }
 
+#if PY_MAJOR_VERSION < 3
 static PyObject *t_fp_seq_getslice(t_fp *self, Py_ssize_t low, Py_ssize_t high)
 {
     return PySequence_GetSlice(self->object, low, high);
 }
+#endif
 
 static int t_fp_seq_set(t_fp *self, Py_ssize_t i, PyObject *value)
 {
     return PySequence_SetItem(self->object, i, value);
 }
 
+#if PY_MAJOR_VERSION < 3
 static int t_fp_seq_setslice(t_fp *self, Py_ssize_t low,
                              Py_ssize_t high, PyObject *arg)
 {
     return PySequence_SetSlice(self->object, low, high, arg);
 }
+#endif
 
 static PyObject *t_fp_seq_inplace_concat(t_fp *self, PyObject *arg)
 {
