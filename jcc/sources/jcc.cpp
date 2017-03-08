@@ -83,8 +83,7 @@ static PyMethodDef t_jccenv_methods[] = {
 };
 
 PyTypeObject PY_TYPE(JCCEnv) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "jcc.JCCEnv",                        /* tp_name */
     sizeof(t_jccenv),                    /* tp_basicsize */
     0,                                   /* tp_itemsize */

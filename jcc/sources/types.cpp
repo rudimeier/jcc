@@ -53,8 +53,7 @@ static PyObject *t_fp_seq_inplace_repeat(t_fp *self, Py_ssize_t n);
 
 
 PyTypeObject PY_TYPE(FinalizerClass) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "jcc.FinalizerClass",                /* tp_name */
     PyType_Type.tp_basicsize,            /* tp_basicsize */
     0,                                   /* tp_itemsize */
@@ -114,8 +113,7 @@ static PySequenceMethods t_fp_as_sequence = {
 };
 
 PyTypeObject PY_TYPE(FinalizerProxy) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "jcc.FinalizerProxy",                /* tp_name */
     sizeof(t_fp),                        /* tp_basicsize */
     0,                                   /* tp_itemsize */
@@ -309,8 +307,7 @@ static PyMethodDef t_descriptor_methods[] = {
 
 
 PyTypeObject PY_TYPE(ConstVariableDescriptor) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "jcc.ConstVariableDescriptor",       /* tp_name */
     sizeof(t_descriptor),                /* tp_basicsize */
     0,                                   /* tp_itemsize */

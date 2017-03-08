@@ -50,8 +50,7 @@ static PyGetSetDef t_JObject_properties[] = {
 };
 
 PyTypeObject PY_TYPE(JObject) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "jcc.JObject",                       /* tp_name */
     sizeof(t_JObject),                   /* tp_basicsize */
     0,                                   /* tp_itemsize */
