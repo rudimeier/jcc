@@ -194,11 +194,12 @@ static PyObject *t_jccenv_isShared(PyObject *self)
 
 static PyObject *t_jccenv_strhash(PyObject *self, PyObject *arg)
 {
-    int hash = PyObject_Hash(arg);
-    char buffer[10];
+    long hash = PyObject_Hash(arg);
+    size_t hexdig = sizeof(long) * 2;
+    char buffer[hexdig + 1];
 
-    sprintf(buffer, "%08x", (unsigned int) hash);
-    return PyString_FromStringAndSize(buffer, 8);
+    sprintf(buffer, "%0*lx", (int)hexdig, (unsigned long)hash);
+    return PyString_FromStringAndSize(buffer, hexdig);
 }
 
 static PyObject *t_jccenv__dumpRefs(PyObject *self,
