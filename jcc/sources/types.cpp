@@ -175,7 +175,7 @@ static void t_fp_dealloc(t_fp *self)
         ((t_JObject *) self->object)->object.weaken$();
 
     t_fp_clear(self);
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 static int t_fp_traverse(t_fp *self, visitproc visit, void *arg)
@@ -353,7 +353,7 @@ static void t_descriptor_dealloc(t_descriptor *self)
     {
         Py_DECREF(self->access.value);
     }
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 PyObject *make_descriptor(PyTypeObject *value)

@@ -125,7 +125,7 @@ PyTypeObject PY_TYPE(JCCEnv) = {
 
 static void t_jccenv_dealloc(t_jccenv *self)
 {
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 static void add_option(char *name, const char *value, JavaVMOption *option)

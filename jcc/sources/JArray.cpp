@@ -57,7 +57,7 @@ public:
     static void dealloc(_t_iterator *self)
     {
         Py_XDECREF(self->obj);
-        self->ob_type->tp_free((PyObject *) self);
+        Py_TYPE(self)->tp_free((PyObject *) self);
     }
 
     static PyObject *iternext(_t_iterator *self)
@@ -124,7 +124,7 @@ template<typename T, typename U>
 static void dealloc(U *self)
 {
     self->array = JArray<T>((jobject) NULL);
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 template<typename U>
@@ -507,8 +507,8 @@ public:
         {
             memset(&type_object, 0, sizeof(type_object));
 
-            type_object.ob_refcnt = 1;
-            type_object.ob_type = NULL;
+            Py_REFCNT(&type_object) = 1;
+            Py_TYPE(&type_object) = NULL;
             type_object.tp_basicsize = sizeof(_t_iterator<U>);
             type_object.tp_dealloc = (destructor) _t_iterator<U>::dealloc;
             type_object.tp_flags = Py_TPFLAGS_DEFAULT;
@@ -595,7 +595,7 @@ public:
         seq_methods.sq_inplace_concat = NULL;
         seq_methods.sq_inplace_repeat = NULL;
 
-        type_object.ob_refcnt = 1;
+        Py_REFCNT(&type_object) = 1;
         type_object.tp_basicsize = sizeof(U);
         type_object.tp_dealloc = (destructor) (void (*)(U *)) dealloc<T,U>;
         type_object.tp_repr = (reprfunc) (PyObject *(*)(U *)) repr<U>;
@@ -1117,7 +1117,7 @@ PyObject *JArray_Type(PyObject *self, PyObject *arg)
     }
     else
     {
-        PyObject *arg_type = (PyObject *) arg->ob_type;
+        PyObject *arg_type = (PyObject *) Py_TYPE(arg);
 
         type_name = PyObject_GetAttrString(arg_type, "__name__");
         if (!type_name)

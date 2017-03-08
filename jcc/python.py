@@ -372,7 +372,7 @@ def call(out, indent, cls, inCase, method, names, cardinality, isExtension,
         line(out)
         line(out, indent, '%s object(result.this$);', typename(cls, cls, False))
         line(out, indent, 'if (PyObject_TypeCheck(arg, &PY_TYPE(FinalizerProxy)) &&')
-        line(out, indent, '    PyObject_TypeCheck(((t_fp *) arg)->object, self->ob_type))')
+        line(out, indent, '    PyObject_TypeCheck(((t_fp *) arg)->object, Py_TYPE(self)))')
         line(out, indent, '{')
         line(out, indent + 1, 'PyObject *_arg = ((t_fp *) arg)->object;')
         line(out, indent + 1, '((t_JObject *) _arg)->object = object;')

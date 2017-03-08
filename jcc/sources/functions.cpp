@@ -300,7 +300,7 @@ static int is_instance_of(PyObject *arg, PyTypeObject *type)
 #if defined(_MSC_VER) || defined(__SUNPRO_CC)
 int __parseArgs(PyObject *args, char *types, ...)
 {
-    int count = ((PyTupleObject *)(args))->ob_size;
+    int count = Py_SIZE((PyTupleObject *)args);
     va_list list, check;
 
     va_start(list, types);
@@ -1328,7 +1328,7 @@ PyObject *PyErr_SetArgsError(PyObject *self, char *name, PyObject *args)
 {
     if (!PyErr_Occurred())
     {
-        PyObject *type = (PyObject *) self->ob_type;
+        PyObject *type = (PyObject *) Py_TYPE(self);
         PyObject *err = Py_BuildValue("(OsO)", type, name, args);
 
         PyErr_SetObject(PyExc_InvalidArgsError, err);
@@ -1440,7 +1440,7 @@ void throwTypeError(const char *name, PyObject *object)
 int abstract_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *err =
-        Py_BuildValue("(sO)", "instantiating java class", self->ob_type);
+        Py_BuildValue("(sO)", "instantiating java class", Py_TYPE(self));
 
     PyErr_SetObject(PyExc_NotImplementedError, err);
     Py_DECREF(err);
@@ -1688,7 +1688,7 @@ void installType(PyTypeObject *type, PyObject *module, char *name,
         Py_INCREF(type);
         if (isExtension)
         {
-            type->ob_type = &PY_TYPE(FinalizerClass);
+            Py_TYPE(type) = &PY_TYPE(FinalizerClass);
             Py_INCREF(&PY_TYPE(FinalizerClass));
         }
         PyModule_AddObject(module, name, (PyObject *) type);

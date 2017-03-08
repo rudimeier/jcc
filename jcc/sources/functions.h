@@ -52,7 +52,7 @@ int _parseArgs(PyObject **args, unsigned int count, char *types,
 
 #define parseArgs(args, types, rest...) \
     _parseArgs(((PyTupleObject *)(args))->ob_item, \
-               ((PyTupleObject *)(args))->ob_size, types, ##rest)
+               Py_SIZE((PyTupleObject *)args), types, ##rest)
 
 #define parseArg(arg, types, rest...) \
     _parseArgs(&(arg), 1, types, ##rest)

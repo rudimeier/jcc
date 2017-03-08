@@ -95,7 +95,7 @@ PyTypeObject PY_TYPE(JObject) = {
 static void t_JObject_dealloc(t_JObject *self)
 {
     self->object = JObject(NULL);
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 static PyObject *t_JObject_new(PyTypeObject *type,
@@ -161,9 +161,9 @@ static PyObject *t_JObject_str(t_JObject *self)
 
 static PyObject *t_JObject_repr(t_JObject *self)
 {
-    PyObject *name = PyObject_GetAttrString((PyObject *) self->ob_type,
+    PyObject *name = PyObject_GetAttrString((PyObject *) Py_TYPE(self),
                                             "__name__");
-    PyObject *str = self->ob_type->tp_str((PyObject *) self);
+    PyObject *str = Py_TYPE(self)->tp_str((PyObject *) self);
     PyObject *args = PyTuple_Pack(2, name, str);
     PyObject *format = PyString_FromString("<%s: %s>");
     PyObject *repr = PyString_Format(format, args);
