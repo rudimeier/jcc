@@ -30,12 +30,12 @@ if sys.platform == "darwin":
     else:
         process.wait()
         if process.returncode == 0:
-            _path = process.stdout.read().strip()
+            _path = process.stdout.read().strip().decode()
             if os.path.exists(os.path.join(_path, "include", "jni.h")):
                 JAVAHOME = _path
                 print('found JAVAHOME =', JAVAHOME, file=sys.stderr)
         else:
-            print(process.stderr.read(), file=sys.stderr)
+            print(process.stderr.read().strip().decode(), file=sys.stderr)
 
     # figure out where the JDK Frameworks lives
     import platform, re
