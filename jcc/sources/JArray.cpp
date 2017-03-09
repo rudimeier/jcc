@@ -1176,12 +1176,18 @@ PyObject *JArray_Type(PyObject *self, PyObject *arg)
     return type;
 }
 
+static PyObject *t_JArray_jbyte__get_bytes_(t_JArray<jbyte> *self, void *data)
+{
+    return self->array.to_bytes_();
+}
+
 static PyObject *t_JArray_jbyte__get_string_(t_JArray<jbyte> *self, void *data)
 {
     return self->array.to_string_();
 }
 
 static PyGetSetDef t_JArray_jbyte__fields[] = {
+    { "bytes_", (getter) t_JArray_jbyte__get_bytes_, NULL, "", NULL },
     { "string_", (getter) t_JArray_jbyte__get_string_, NULL, "", NULL },
     { NULL, NULL, NULL, NULL, NULL }
 };

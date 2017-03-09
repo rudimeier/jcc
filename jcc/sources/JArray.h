@@ -660,6 +660,17 @@ template<> class JArray<jbyte> : public java::lang::Object {
         return tuple;
     }
 
+    PyObject *to_bytes_()
+    {
+        if (this$ == NULL)
+            Py_RETURN_NONE;
+
+        arrayElements elts = elements();
+        jbyte *buf = (jbyte *) elts;
+
+        return PyBytes_FromStringAndSize((char *) buf, length);
+    }
+
     PyObject *to_string_()
     {
         if (this$ == NULL)
@@ -668,7 +679,11 @@ template<> class JArray<jbyte> : public java::lang::Object {
         arrayElements elts = elements();
         jbyte *buf = (jbyte *) elts;
 
+#if PY_MAJOR_VERSION < 3
         return PyString_FromStringAndSize((char *) buf, length);
+#else
+        return PyUnicode_FromStringAndSize((char *) buf, length);
+#endif
     }
 
     PyObject *get(Py_ssize_t n)
