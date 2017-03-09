@@ -144,7 +144,7 @@ static PyObject *_format(U *self, PyObject *(*fn)(PyObject *))
                 PyObject *args = PyTuple_New(1);
 
                 PyTuple_SET_ITEM(args, 0, result);
-                result = PyString_Format(U::format, args);
+                result = PyUnicode_Format(U::format, args);
                 Py_DECREF(args);
 
                 return result;
@@ -154,7 +154,7 @@ static PyObject *_format(U *self, PyObject *(*fn)(PyObject *))
         return NULL;
     }
 
-    return PyString_FromString("<null>");
+    return PyUnicode_FromString("<null>");
 }
 
 template<typename U>
@@ -536,7 +536,7 @@ public:
             PyModule_AddObject(module, name, (PyObject *) &type_object);
         }
 
-        U::format = PyString_FromFormat("JArray<%s>%%s", type_name);
+        U::format = PyUnicode_FromFormat("JArray<%s>%%s", type_name);
         iterator_type_object.install(iterator_name, module);
     }
 

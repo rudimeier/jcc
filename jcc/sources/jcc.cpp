@@ -199,7 +199,7 @@ static PyObject *t_jccenv_strhash(PyObject *self, PyObject *arg)
     char buffer[hexdig + 1];
 
     sprintf(buffer, "%0*lx", (int)hexdig, (unsigned long)hash);
-    return PyString_FromStringAndSize(buffer, hexdig);
+    return PyUnicode_FromStringAndSize(buffer, hexdig);
 }
 
 static PyObject *t_jccenv__dumpRefs(PyObject *self,
@@ -228,7 +228,7 @@ static PyObject *t_jccenv__dumpRefs(PyObject *self,
         if (classes)  // return dict of { class name: instance count }
         {
             char *name = env->getClassName(iter->second.global);
-            PyObject *key = PyString_FromString(name);
+            PyObject *key = PyUnicode_FromString(name);
             PyObject *value = PyDict_GetItem(result, key);
 
             if (value == NULL)
@@ -245,7 +245,7 @@ static PyObject *t_jccenv__dumpRefs(PyObject *self,
         else if (values)  // return list of (value string, ref count)
         {
             char *str = env->toString(iter->second.global);
-            PyObject *key = PyString_FromString(str);
+            PyObject *key = PyUnicode_FromString(str);
             PyObject *value = PyInt_FromLong(iter->second.count);
 
             PyList_SET_ITEM(result, count++, PyTuple_Pack(2, key, value));
@@ -296,7 +296,7 @@ static PyObject *t_jccenv__get_classpath(PyObject *self, void *data)
 
     if (classpath)
     {
-        PyObject *result = PyString_FromString(classpath);
+        PyObject *result = PyUnicode_FromString(classpath);
 
         free(classpath);
         return result;
@@ -327,9 +327,9 @@ _DLL_EXPORT PyObject *initJCC(PyObject *module)
     static int _once_only = 1;
 #if defined(_MSC_VER) || defined(__WIN32)
 #define verstring(n) #n
-    PyObject *ver = PyString_FromString(verstring(JCC_VER));
+    PyObject *ver = PyUnicode_FromString(verstring(JCC_VER));
 #else
-    PyObject *ver = PyString_FromString(JCC_VER);
+    PyObject *ver = PyUnicode_FromString(JCC_VER);
 #endif
     PyObject_SetAttrString(module, "JCC_VERSION", ver); Py_DECREF(ver);
 
@@ -565,7 +565,7 @@ _DLL_EXPORT PyObject *getJavaModule(PyObject *module,
     if (parent[0] == '\0')
     {
         parent_module = NULL;
-        full_name = PyString_FromString(name);
+        full_name = PyUnicode_FromString(name);
     }
     else if ((parent_module = PyDict_GetItemString(modules, parent)) == NULL)
     {
@@ -573,7 +573,7 @@ _DLL_EXPORT PyObject *getJavaModule(PyObject *module,
         return NULL;
     }
     else
-        full_name = PyString_FromFormat("%s.%s", parent, name);
+        full_name = PyUnicode_FromFormat("%s.%s", parent, name);
 
     PyObject *child_module = PyDict_GetItem(modules, full_name);
 
@@ -596,7 +596,7 @@ _DLL_EXPORT PyObject *getJavaModule(PyObject *module,
      */
     if (child_module != NULL)
     {
-        PyObject *__file__ = PyString_FromString("__file__");
+        PyObject *__file__ = PyUnicode_FromString("__file__");
         PyObject *file = PyDict_GetItem(PyModule_GetDict(module), __file__);
 
         if (file != NULL)

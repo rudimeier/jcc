@@ -156,7 +156,7 @@ static PyObject *t_JObject_str(t_JObject *self)
         }
     }
 
-    return PyString_FromString("<null>");
+    return PyUnicode_FromString("<null>");
 }
 
 static PyObject *t_JObject_repr(t_JObject *self)
@@ -165,8 +165,8 @@ static PyObject *t_JObject_repr(t_JObject *self)
                                             "__name__");
     PyObject *str = Py_TYPE(self)->tp_str((PyObject *) self);
     PyObject *args = PyTuple_Pack(2, name, str);
-    PyObject *format = PyString_FromString("<%s: %s>");
-    PyObject *repr = PyString_Format(format, args);
+    PyObject *format = PyUnicode_FromString("<%s: %s>");
+    PyObject *repr = PyUnicode_Format(format, args);
 
     Py_DECREF(name);
     Py_DECREF(str);

@@ -266,7 +266,7 @@ PyObject *makeClass(PyObject *self, PyObject *args)
 
 static boxfn get_boxfn(PyTypeObject *type)
 {
-    static PyObject *boxfn_ = PyString_FromString("boxfn_");
+    static PyObject *boxfn_ = PyUnicode_FromString("boxfn_");
     PyObject *cobj = PyObject_GetAttr((PyObject *) type, boxfn_);
     boxfn fn;
     
@@ -281,7 +281,7 @@ static boxfn get_boxfn(PyTypeObject *type)
 
 static int is_instance_of(PyObject *arg, PyTypeObject *type)
 {
-    static PyObject *class_ = PyString_FromString("class_");
+    static PyObject *class_ = PyUnicode_FromString("class_");
     PyObject *clsObj = PyObject_GetAttr((PyObject *) type, class_);
     int result;
 
@@ -822,7 +822,7 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
 
           case 'T':         /* tuple of python types with wrapfn_ */
           {
-              static PyObject *wrapfn_ = PyString_FromString("wrapfn_");
+              static PyObject *wrapfn_ = PyUnicode_FromString("wrapfn_");
               int len = va_arg(list, int);
 
               if (PyTuple_Check(arg))
@@ -1697,7 +1697,7 @@ void installType(PyTypeObject *type, PyObject *module, char *name,
 
 PyObject *wrapType(PyTypeObject *type, const jobject& obj)
 {
-    static PyObject *wrapfn_ = PyString_FromString("wrapfn_");
+    static PyObject *wrapfn_ = PyUnicode_FromString("wrapfn_");
     PyObject *cobj = PyObject_GetAttr((PyObject *) type, wrapfn_);
     PyObject *(*wrapfn)(const jobject&);
     
