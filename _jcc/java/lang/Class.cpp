@@ -397,17 +397,14 @@ namespace java {
 
         static PyObject *t_Class_forName(PyTypeObject *type, PyObject *arg)
         {
-            if (!PyString_Check(arg))
+            if (arg == Py_None)
             {
-                PyErr_SetObject(PyExc_TypeError, arg);
+                PyErr_SetObject(PyExc_ValueError, arg);
                 return NULL;
             }
 
             try {
-                char *className = PyString_AsString(arg);
-                String name = String(env->fromUTF(className));
-
-                return t_Class::wrap_Object(Class::forName(name));
+                return t_Class::wrap_Object(Class::forName(p2j(arg)));
             } catch (int e) {
                 switch (e) {
                   case _EXC_JAVA:
