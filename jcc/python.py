@@ -1808,9 +1808,12 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
             args['library_dirs'] = [shlibdir]
             args['libraries'] = ['jcc']
         elif sys.platform.startswith('linux'): # distutils no good with -R
+            from setuptools.command.build_ext import _CONFIG_VARS
+            soabi = _CONFIG_VARS.get('SOABI', '')
+            libjcc = 'jcc.'+soabi if soabi else 'jcc'
             args['extra_link_args'] += ['-Wl,-rpath', shlibdir]
             args['library_dirs'] = [shlibdir]
-            args['libraries'] = ['jcc']
+            args['libraries'] = [libjcc]
             args['extra_link_args'] += [
                 getattr(import_, "_%s" %(import_.__name__)).__file__
                 for import_ in imports

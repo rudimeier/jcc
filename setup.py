@@ -331,8 +331,8 @@ def main(debug):
                           '-current_version', jcc_ver,
                           '-compatibility_version', jcc_ver]
         elif platform == 'linux':
-            kwds["extra_link_args"] = \
-                lflags + ['-lpython%s.%s' %(sys.version_info[0:2])]
+            from setuptools.command.build_ext import _CONFIG_VARS
+            kwds["extra_link_args"] = lflags + [_CONFIG_VARS['BLDLIBRARY']]
             kwds["force_shared"] = True    # requires jcc/patches/patch.43
         elif platform in IMPLIB_LFLAGS:
             jcclib = 'jcc%s.lib' %(debug and '_d' or '')
