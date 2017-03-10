@@ -1419,7 +1419,7 @@ void throwPythonError(void)
         PyObject *name = PyObject_GetAttrString(exc, "__name__");
 
         env->get_vm_env()->ThrowNew(env->getPythonExceptionClass(),
-                                    PyString_AS_STRING(name));
+                                    PyStrOrUni_AsString(name));
         Py_DECREF(name);
     }
     else

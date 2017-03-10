@@ -1113,7 +1113,7 @@ PyObject *JArray_Type(PyObject *self, PyObject *arg)
         if (!type_name)
             return NULL;
     }
-    else if (PyString_Check(arg))
+    else if (PyStrOrUni_Check(arg))
     {
         type_name = arg;
         Py_INCREF(type_name);
@@ -1134,7 +1134,7 @@ PyObject *JArray_Type(PyObject *self, PyObject *arg)
 
     if (type_name != NULL)
     {
-        name = PyString_AsString(type_name);
+        name = PyStrOrUni_AsString(type_name);
         if (!name)
         {
             Py_DECREF(type_name);

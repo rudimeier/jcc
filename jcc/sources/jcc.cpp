@@ -354,7 +354,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         "classpath", "initialheap", "maxheap", "maxstack",
         "vmargs", NULL
     };
-    char *classpath = NULL;
+    const char *classpath = NULL;
     char *initialheap = NULL, *maxheap = NULL, *maxstack = NULL;
     PyObject *vmargs = NULL;
 
@@ -379,7 +379,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         {
             module_cp = PyObject_GetAttrString(self, "CLASSPATH");
             if (module_cp != NULL)
-                classpath = PyString_AsString(module_cp);
+                classpath = PyStrOrUni_AsString(module_cp);
         }
 
         if (classpath && classpath[0])
@@ -405,20 +405,34 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         {
             module_cp = PyObject_GetAttrString(self, "CLASSPATH");
             if (module_cp != NULL)
-                classpath = PyString_AsString(module_cp);
+                classpath = PyStrOrUni_AsString(module_cp);
         }
 
 #ifdef _jcc_lib
         PyObject *jcc = PyImport_ImportModule("jcc");
+        if (!jcc)
+            return NULL;
+
         PyObject *cp = PyObject_GetAttrString(jcc, "CLASSPATH");
+        if (!cp) {
+            Py_DECREF(jcc);
+            return NULL;
+        }
+
+        const char* cpchar = PyStrOrUni_AsString(cp);
+        if (!cpchar) {
+            Py_DECREF(cp);
+            Py_DECREF(jcc);
+            return NULL;
+        }
 
         if (classpath)
-            add_paths("-Djava.class.path=", PyString_AsString(cp), classpath,
-                      &vm_options[nOptions++]);
+            add_paths("-Djava.class.path=", cpchar,
+                      classpath, &vm_options[nOptions++]);
         else
-            add_option("-Djava.class.path=", PyString_AsString(cp),
+            add_option("-Djava.class.path=", cpchar,
                        &vm_options[nOptions++]);
-            
+
         Py_DECREF(cp);
         Py_DECREF(jcc);
 #else
@@ -436,12 +450,12 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         if (maxstack)
             add_option("-Xss", maxstack, &vm_options[nOptions++]);
 
-        if (vmargs != NULL && PyString_Check(vmargs))
+        if (vmargs != NULL && PyStrOrUni_Check(vmargs))
         {
 #ifdef _MSC_VER
-            char *buf = _strdup(PyString_AS_STRING(vmargs));
+            char *buf = _strdup(PyStrOrUni_AsString(vmargs));
 #else
-            char *buf = strdup(PyString_AS_STRING(vmargs));
+            char *buf = strdup(PyStrOrUni_AsString(vmargs));
 #endif
             char *sep = ",";
             char *option;
@@ -473,9 +487,9 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
             for (int i = 0; i < PySequence_Fast_GET_SIZE(fast); ++i) {
                 PyObject *arg = PySequence_Fast_GET_ITEM(fast, i);
 
-                if (PyString_Check(arg))
+                if (PyStrOrUni_Check(arg))
                 {
-                    char *option = PyString_AS_STRING(arg);
+                    char *option = PyStrOrUni_AsString(arg);
 
                     if (nOptions < sizeof(vm_options) / sizeof(JavaVMOption))
                         add_option("", option, &vm_options[nOptions++]);
@@ -565,7 +579,7 @@ _DLL_EXPORT PyObject *getJavaModule(PyObject *module,
 
     if (child_module == NULL)
     {
-        child_module = PyModule_New(PyString_AS_STRING(full_name));
+        child_module = PyModule_New(PyStrOrUni_AsString(full_name));
         if (child_module != NULL)
         {
             if (parent_module != NULL)

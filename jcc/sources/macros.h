@@ -164,7 +164,13 @@ PyObject *t_name::wrap_jobject(const jobject& object)                   \
 
 #if PY_MAJOR_VERSION < 3
 
+#define PyStrOrUni_Check            PyString_Check
+#define PyStrOrUni_AsString         PyString_AsString
+
 #else /* PY_MAJOR_VERSION < 3 */
+
+#define PyStrOrUni_Check            PyUnicode_Check
+#define PyStrOrUni_AsString         PyUnicode_AsUTF8
 
 #define PyInt_AsLong                PyLong_AsLong
 #define PyInt_AS_LONG               PyLong_AS_LONG
