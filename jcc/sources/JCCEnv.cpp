@@ -19,6 +19,7 @@
 #include <jni.h>
 
 #include "JCCEnv.h"
+#include <bytesobject.h>
 
 #if defined(_MSC_VER) || defined(__WIN32)
 _DLL_EXPORT DWORD VM_ENV = 0;
@@ -1021,8 +1022,8 @@ jstring JCCEnv::fromPyString(PyObject *object) const
             return str;
         }
     }
-    else if (PyString_Check(object))
-        return fromUTF(PyString_AS_STRING(object));
+    else if (PyBytes_Check(object))
+        return fromUTF(PyBytes_AS_STRING(object));
     else
     {
         PyObject *tuple = Py_BuildValue("(sO)", "expected a string", object);

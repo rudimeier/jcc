@@ -422,7 +422,7 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                       break;
 
                   if (PySequence_Check(arg) &&
-                      !PyString_Check(arg) && !PyUnicode_Check(arg))
+                      !PyBytes_Check(arg) && !PyUnicode_Check(arg))
                   {
                       if (PySequence_Length(arg) > 0)
                       {
@@ -772,14 +772,14 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                       break;
 
                   if (PySequence_Check(arg) && 
-                      !PyString_Check(arg) && !PyUnicode_Check(arg))
+                      !PyBytes_Check(arg) && !PyUnicode_Check(arg))
                   {
                       if (PySequence_Length(arg) > 0)
                       {
                           PyObject *obj = PySequence_GetItem(arg, 0);
                           int ok =
                               (obj == Py_None ||
-                               PyString_Check(obj) || PyUnicode_Check(obj));
+                               PyBytes_Check(obj) || PyUnicode_Check(obj));
 
                           Py_DECREF(obj);
                           if (ok)
@@ -790,14 +790,14 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                   } 
 
                   if (last && (arg == Py_None ||
-                               PyString_Check(arg) || PyUnicode_Check(arg)))
+                               PyBytes_Check(arg) || PyUnicode_Check(arg)))
                   {
                       varargs = true;
                       break;
                   }
               }
               else if (arg == Py_None ||
-                       PyString_Check(arg) || PyUnicode_Check(arg))
+                       PyBytes_Check(arg) || PyUnicode_Check(arg))
                   break;
 
               return -1;
@@ -1551,7 +1551,7 @@ static bool setArrayObj(jobjectArray array, int index, PyObject *obj)
 
     if (obj == Py_None)
       jobj = NULL;
-    else if (PyString_Check(obj) || PyUnicode_Check(obj))
+    else if (PyBytes_Check(obj) || PyUnicode_Check(obj))
     {
         jobj = env->fromPyString(obj);
         deleteLocal = true;
@@ -1985,12 +1985,12 @@ int boxCharacter(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
     if (result <= 0)
         return result;
 
-    if (PyString_Check(arg))
+    if (PyBytes_Check(arg))
     {
         char *c;
         Py_ssize_t len;
 
-        if (PyString_AsStringAndSize(arg, &c, &len) < 0 || len != 1)
+        if (PyBytes_AsStringAndSize(arg, &c, &len) < 0 || len != 1)
             return -1;
 
         if (obj != NULL)
@@ -2004,7 +2004,7 @@ int boxCharacter(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
             return -1;
 
         if (obj != NULL)
-            *obj = Character((jchar) PyUnicode_AsUnicode(arg)[0]);
+            *obj = Character((jchar) PyUnicode_AS_UNICODE(arg)[0]);
     }
     else
         return -1;
@@ -2019,7 +2019,7 @@ int boxCharSequence(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
     if (result <= 0)
         return result;
 
-    if (PyString_Check(arg) || PyUnicode_Check(arg))
+    if (PyBytes_Check(arg) || PyUnicode_Check(arg))
     {
         if (obj != NULL)
         {
@@ -2273,7 +2273,7 @@ int boxString(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
     if (result <= 0)
         return result;
 
-    if (PyString_Check(arg) || PyUnicode_Check(arg))
+    if (PyBytes_Check(arg) || PyUnicode_Check(arg))
     {
         if (obj != NULL)
         {
@@ -2297,7 +2297,7 @@ int boxObject(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
 
     if (obj != NULL)
     {
-        if (PyString_Check(arg) || PyUnicode_Check(arg))
+        if (PyBytes_Check(arg) || PyUnicode_Check(arg))
         {
             *obj = p2j(arg);
             if (PyErr_Occurred())
@@ -2324,7 +2324,7 @@ int boxObject(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
         else
             return -1;
     }
-    else if (!(PyString_Check(arg) || PyUnicode_Check(arg) ||
+    else if (!(PyBytes_Check(arg) || PyUnicode_Check(arg) ||
                arg == Py_True || arg == Py_False ||
                PyInt_Check(arg) || PyLong_Check(arg) ||
                PyFloat_Check(arg)))

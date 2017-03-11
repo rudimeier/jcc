@@ -17,6 +17,7 @@
 
 #ifdef PYTHON
 #include <Python.h>
+#include <bytesobject.h>
 #include "macros.h"
 
 
@@ -196,7 +197,7 @@ template<> class JArray<jobject> : public java::lang::Object {
             {
                 jobject jobj;
 
-                if (PyString_Check(obj) || PyUnicode_Check(obj))
+                if (PyBytes_Check(obj) || PyUnicode_Check(obj))
                     jobj = env->fromPyString(obj);
                 else if (!PyObject_TypeCheck(obj, &PY_TYPE(JObject)))
                 {
