@@ -537,7 +537,8 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
 
                   if (last)
                   {
-                      if ((PyString_Check(arg) && (PyString_Size(arg) == 1)) ||
+                      if ((PyBytes_Check(arg) && (PyBytes_Size(arg) == 1)) ||
+                          (PyUnicode_Check(arg) && (PyUnicode_GET_SIZE(arg) == 1)) ||
                           PyInt_CheckExact(arg))
                       {
                           varargs = true;
@@ -545,7 +546,8 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                       }
                   }
               }
-              else if (PyString_Check(arg) && (PyString_Size(arg) == 1))
+              else if ((PyBytes_Check(arg) && (PyBytes_Size(arg) == 1)) ||
+                       (PyUnicode_Check(arg) && (PyUnicode_GET_SIZE(arg) == 1)))
                   break;
               else if (PyInt_CheckExact(arg))
                   break;
@@ -1015,10 +1017,15 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                   if (PyErr_Occurred())
                       return -1;
               }
-              else if (PyString_Check(arg))
+              else if (PyBytes_Check(arg))
               {
                   jbyte *a = va_arg(list, jbyte *);
-                  *a = (jbyte) PyString_AS_STRING(arg)[0];
+                  *a = (jbyte) PyBytes_AS_STRING(arg)[0];
+              }
+              else if (PyUnicode_Check(arg))
+              {
+                  jbyte *a = va_arg(list, jbyte *);
+                  *a = (jbyte) PyUnicode_AS_UNICODE(arg)[0];
               }
               else
               {

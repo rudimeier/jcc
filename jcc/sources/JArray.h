@@ -565,8 +565,13 @@ template<> class JArray<jbyte> : public java::lang::Object {
         arrayElements elts = elements();
         jbyte *buf = (jbyte *) elts;
 
-        if (PyString_Check(sequence))
-            memcpy(buf, PyString_AS_STRING(sequence), length);
+        if (PyBytes_Check(sequence))
+            memcpy(buf, PyBytes_AS_STRING(sequence), length);
+/* there is no PyUnicode_AsUTF8 on python2 */
+#if PY_MAJOR_VERSION >= 3
+        else if (PyUnicode_Check(sequence))
+            memcpy(buf, PyUnicode_AsUTF8(sequence), length);
+#endif
         else
             for (Py_ssize_t i = 0; i < length; i++) {
                 PyObject *obj = PySequence_GetItem(sequence, i);
@@ -574,9 +579,14 @@ template<> class JArray<jbyte> : public java::lang::Object {
                 if (!obj)
                     break;
 
-                if (PyString_Check(obj) && (PyString_GET_SIZE(obj) == 1))
+                if (PyBytes_Check(obj) && (PyBytes_GET_SIZE(obj) == 1))
                 {
-                    buf[i] = (jbyte) PyString_AS_STRING(obj)[0];
+                    buf[i] = (jbyte) PyBytes_AS_STRING(obj)[0];
+                    Py_DECREF(obj);
+                }
+                else if (PyUnicode_Check(obj) && (PyUnicode_GET_SIZE(obj) == 1))
+                {
+                    buf[i] = (jbyte) PyUnicode_AS_UNICODE(obj)[0];
                     Py_DECREF(obj);
                 }
                 else if (PyInt_CheckExact(obj))
@@ -603,8 +613,10 @@ template<> class JArray<jbyte> : public java::lang::Object {
             if (!obj)
                 break;
 
-            if (PyString_Check(obj) && (PyString_GET_SIZE(obj) == 1))
-                buf[i] = (jbyte) PyString_AS_STRING(obj)[0];
+            if (PyBytes_Check(obj) && (PyBytes_GET_SIZE(obj) == 1))
+                buf[i] = (jbyte) PyBytes_AS_STRING(obj)[0];
+            else if (PyUnicode_Check(obj) && (PyUnicode_GET_SIZE(obj) == 1))
+                buf[i] = (jbyte) PyUnicode_AS_UNICODE(obj)[0];
             else if (PyInt_CheckExact(obj))
                 buf[i] = (jbyte) PyInt_AS_LONG(obj);
             else
