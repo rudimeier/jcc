@@ -604,22 +604,42 @@ static void raise_error(JNIEnv *vm_env, const char *message)
 static void _PythonVM_init(JNIEnv *vm_env, jobject self,
                            jstring programName, jobjectArray args)
 {
+#if PY_MAJOR_VERSION < 3
     const char *str = vm_env->GetStringUTFChars(programName, JNI_FALSE);
+#else
+    const jchar *jchars = vm_env->GetStringChars(programName, JNI_FALSE);
+    jsize len = vm_env->GetStringLength(programName);
+    wchar_t *wchars = (wchar_t *) calloc(len + 1, sizeof(wchar_t));
+#endif
+
 #ifdef linux
     char buf[32];
 
-    // load python runtime for other .so modules to link (such as _time.so)
+    /* load python runtime for other .so modules to link (such as _time.so) */
     sprintf(buf, "libpython%d.%d.so", PY_MAJOR_VERSION, PY_MINOR_VERSION);
     dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 #endif
 
+#if PY_MAJOR_VERSION < 3
     Py_SetProgramName((char *) str);
+#else
+    if (wchars != NULL)
+    {
+        for (int i = 0; i < len; i++)
+            wchars[i] = (wchar_t) jchars[i];
+        wchars[len] = '\0';
+        vm_env->ReleaseStringChars(programName, jchars);
+
+        Py_SetProgramName((wchar_t *) wchars); /* wchars leaked to python vm */
+    }
+#endif
 
     PyEval_InitThreads();
     Py_Initialize();
 
     if (args)
     {
+#if PY_MAJOR_VERSION < 3
         int argc = vm_env->GetArrayLength(args);
         char **argv = (char **) calloc(argc + 1, sizeof(char *));
 
@@ -641,6 +661,37 @@ static void _PythonVM_init(JNIEnv *vm_env, jobject self,
         PySys_SetArgv(1, (char **) &str);
 
     vm_env->ReleaseStringUTFChars(programName, str);
+#else
+        int argc = vm_env->GetArrayLength(args) + 1;
+        wchar_t **argv = (wchar_t **) calloc(argc, sizeof(wchar_t *));
+
+        argv[0] = wchars;
+        for (int i = 1; i < argc; i++) {
+            jstring arg = (jstring) vm_env->GetObjectArrayElement(args, i - 1);
+
+            jchars = vm_env->GetStringChars(arg, JNI_FALSE);
+            len = vm_env->GetStringLength(arg);
+
+            wchars = argv[i] = (wchar_t *) calloc(len + 1, sizeof(wchar_t));
+            if (wchars != NULL)
+            {
+                for (int j = 0; j < len; j++)
+                    wchars[j] = (wchar_t) jchars[j];
+                wchars[len] = '\0';
+            }
+            vm_env->ReleaseStringChars(arg, jchars);
+        }
+
+        PySys_SetArgv(argc, argv);
+
+        for (int i = 1; i < argc; i++)
+            free(argv[i]);
+        free(argv);
+    }
+    else
+        PySys_SetArgv(1, (wchar_t **) &wchars);
+#endif
+
     PyEval_ReleaseLock();
 }
 
