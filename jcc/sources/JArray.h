@@ -199,7 +199,7 @@ template<> class JArray<jobject> : public java::lang::Object {
             {
                 jobject jobj;
 
-                if (PyString_Check(obj) || PyUnicode_Check(obj))
+                if (PyUnicode_Check(obj))
                     jobj = env->fromPyString(obj);
                 else if (!PyObject_TypeCheck(obj, &PY_TYPE(JObject)))
                 {
@@ -567,8 +567,8 @@ template<> class JArray<jbyte> : public java::lang::Object {
         arrayElements elts = elements();
         jbyte *buf = (jbyte *) elts;
 
-        if (PyString_Check(sequence))
-            memcpy(buf, PyString_AS_STRING(sequence), length);
+        if (PyBytes_Check(sequence))
+            memcpy(buf, PyBytes_AS_STRING(sequence), length);
         else
             for (Py_ssize_t i = 0; i < length; i++) {
                 PyObject *obj = PySequence_GetItem(sequence, i);
@@ -576,14 +576,14 @@ template<> class JArray<jbyte> : public java::lang::Object {
                 if (!obj)
                     break;
 
-                if (PyString_Check(obj) && (PyString_GET_SIZE(obj) == 1))
+                if (PyBytes_Check(obj) && (PyBytes_GET_SIZE(obj) == 1))
                 {
-                    buf[i] = (jbyte) PyString_AS_STRING(obj)[0];
+                    buf[i] = (jbyte) PyBytes_AS_STRING(obj)[0];
                     Py_DECREF(obj);
                 }
-                else if (PyInt_CheckExact(obj))
+                else if (PyLong_CheckExact(obj))
                 {
-                    buf[i] = (jbyte) PyInt_AS_LONG(obj);
+                    buf[i] = (jbyte) PyLong_AS_LONG(obj);
                     Py_DECREF(obj);
                 }
                 else
@@ -605,10 +605,10 @@ template<> class JArray<jbyte> : public java::lang::Object {
             if (!obj)
                 break;
 
-            if (PyString_Check(obj) && (PyString_GET_SIZE(obj) == 1))
-                buf[i] = (jbyte) PyString_AS_STRING(obj)[0];
-            else if (PyInt_CheckExact(obj))
-                buf[i] = (jbyte) PyInt_AS_LONG(obj);
+            if (PyBytes_Check(obj) && (PyBytes_GET_SIZE(obj) == 1))
+                buf[i] = (jbyte) PyBytes_AS_STRING(obj)[0];
+            else if (PyLong_CheckExact(obj))
+                buf[i] = (jbyte) PyLong_AS_LONG(obj);
             else
             {
                 PyErr_SetObject(PyExc_TypeError, obj);
@@ -645,9 +645,20 @@ template<> class JArray<jbyte> : public java::lang::Object {
         PyObject *tuple = PyTuple_New(hi - lo);
         
         for (Py_ssize_t i = 0; i < hi - lo; i++)
-            PyTuple_SET_ITEM(tuple, i, PyInt_FromLong(buf[lo + i]));
+            PyTuple_SET_ITEM(tuple, i, PyLong_FromLong(buf[lo + i]));
 
         return tuple;
+    }
+
+    PyObject *to_bytes_()
+    {
+        if (this$ == NULL)
+            Py_RETURN_NONE;
+
+        arrayElements elts = elements();
+        jbyte *buf = (jbyte *) elts;
+
+        return PyBytes_FromStringAndSize((char *) buf, length);
     }
 
     PyObject *to_string_()
@@ -658,7 +669,7 @@ template<> class JArray<jbyte> : public java::lang::Object {
         arrayElements elts = elements();
         jbyte *buf = (jbyte *) elts;
 
-        return PyString_FromStringAndSize((char *) buf, length);
+        return PyUnicode_FromStringAndSize((char *) buf, length);
     }
 
     PyObject *get(Py_ssize_t n)
@@ -671,7 +682,7 @@ template<> class JArray<jbyte> : public java::lang::Object {
             if (n >= 0 && n < length)
             {
                 jbyte b = (*this)[n];
-                return PyInt_FromLong(b);
+                return PyLong_FromLong(b);
             }
         }
 
@@ -688,13 +699,13 @@ template<> class JArray<jbyte> : public java::lang::Object {
 
             if (n >= 0 && n < length)
             {
-                if (!PyInt_CheckExact(obj))
+                if (!PyLong_CheckExact(obj))
                 {
                     PyErr_SetObject(PyExc_TypeError, obj);
                     return -1;
                 }
 
-                elements()[n] = (jbyte) PyInt_AS_LONG(obj);
+                elements()[n] = (jbyte) PyLong_AS_LONG(obj);
                 return 0;
             }
         }
@@ -782,7 +793,7 @@ template<> class JArray<jchar> : public java::lang::Object {
                 if (!obj)
                     break;
 
-                if (PyUnicode_Check(obj) && (PyUnicode_GET_SIZE(obj) == 1))
+                if (PyUnicode_Check(obj) && (PyUnicode_GET_LENGTH(obj) == 1))
                 {
                     buf[i] = (jchar) PyUnicode_AS_UNICODE(obj)[0];
                     Py_DECREF(obj);
@@ -806,7 +817,7 @@ template<> class JArray<jchar> : public java::lang::Object {
             if (!obj)
                 break;
 
-            if (PyUnicode_Check(obj) && (PyUnicode_GET_SIZE(obj) == 1))
+            if (PyUnicode_Check(obj) && (PyUnicode_GET_LENGTH(obj) == 1))
                 buf[i] = (jchar) PyUnicode_AS_UNICODE(obj)[0];
             else
             {
@@ -895,7 +906,7 @@ template<> class JArray<jchar> : public java::lang::Object {
                     PyErr_SetObject(PyExc_TypeError, obj);
                     return -1;
                 }
-                if (PyUnicode_GET_SIZE(obj) != 1)
+                if (PyUnicode_GET_LENGTH(obj) != 1)
                 {
                     PyErr_SetObject(PyExc_ValueError, obj);
                     return -1;
@@ -1310,9 +1321,9 @@ template<> class JArray<jint> : public java::lang::Object {
             if (!obj)
                 break;
 
-            if (PyInt_Check(obj))
+            if (PyLong_Check(obj))
             {
-                buf[i] = (jint) PyInt_AS_LONG(obj);
+                buf[i] = (jint) PyLong_AS_LONG(obj);
                 Py_DECREF(obj);
             }
             else
@@ -1334,8 +1345,8 @@ template<> class JArray<jint> : public java::lang::Object {
             if (!obj)
                 break;
 
-            if (PyInt_Check(obj))
-                buf[i] = (jint) PyInt_AS_LONG(obj);
+            if (PyLong_Check(obj))
+                buf[i] = (jint) PyLong_AS_LONG(obj);
             else
             {
                 PyErr_SetObject(PyExc_TypeError, obj);
@@ -1367,7 +1378,7 @@ template<> class JArray<jint> : public java::lang::Object {
         jint *buf = (jint *) elts;
 
         for (Py_ssize_t i = lo; i < hi; i++)
-            PyList_SET_ITEM(list, i - lo, PyInt_FromLong(buf[i]));
+            PyList_SET_ITEM(list, i - lo, PyLong_FromLong(buf[i]));
 
         return list;
     }
@@ -1380,7 +1391,7 @@ template<> class JArray<jint> : public java::lang::Object {
                 n = length + n;
 
             if (n >= 0 && n < length)
-                return PyInt_FromLong((*this)[n]);
+                return PyLong_FromLong((*this)[n]);
         }
 
         PyErr_SetString(PyExc_IndexError, "index out of range");
@@ -1396,13 +1407,13 @@ template<> class JArray<jint> : public java::lang::Object {
 
             if (n >= 0 && n < length)
             {
-                if (!PyInt_Check(obj))
+                if (!PyLong_Check(obj))
                 {
                     PyErr_SetObject(PyExc_TypeError, obj);
                     return -1;
                 }
 
-                elements()[n] = (jint) PyInt_AS_LONG(obj);
+                elements()[n] = (jint) PyLong_AS_LONG(obj);
                 return 0;
             }
         }
@@ -1644,9 +1655,9 @@ template<> class JArray<jshort> : public java::lang::Object {
             if (!obj)
                 break;
 
-            if (PyInt_Check(obj))
+            if (PyLong_Check(obj))
             {
-                buf[i] = (jshort) PyInt_AS_LONG(obj);
+                buf[i] = (jshort) PyLong_AS_LONG(obj);
                 Py_DECREF(obj);
             }
             else
@@ -1668,8 +1679,8 @@ template<> class JArray<jshort> : public java::lang::Object {
             if (!obj)
                 break;
 
-            if (PyInt_Check(obj))
-                buf[i] = (jshort) PyInt_AS_LONG(obj);
+            if (PyLong_Check(obj))
+                buf[i] = (jshort) PyLong_AS_LONG(obj);
             else
             {
                 PyErr_SetObject(PyExc_TypeError, obj);
@@ -1701,7 +1712,7 @@ template<> class JArray<jshort> : public java::lang::Object {
         jshort *buf = (jshort *) elts;
 
         for (Py_ssize_t i = lo; i < hi; i++)
-            PyList_SET_ITEM(list, i - lo, PyInt_FromLong(buf[i]));
+            PyList_SET_ITEM(list, i - lo, PyLong_FromLong(buf[i]));
 
         return list;
     }
@@ -1714,7 +1725,7 @@ template<> class JArray<jshort> : public java::lang::Object {
                 n = length + n;
 
             if (n >= 0 && n < length)
-                return PyInt_FromLong((long) (*this)[n]);
+                return PyLong_FromLong((long) (*this)[n]);
         }
 
         PyErr_SetString(PyExc_IndexError, "index out of range");
@@ -1730,13 +1741,13 @@ template<> class JArray<jshort> : public java::lang::Object {
 
             if (n >= 0 && n < length)
             {
-                if (!PyInt_Check(obj))
+                if (!PyLong_Check(obj))
                 {
                     PyErr_SetObject(PyExc_TypeError, obj);
                     return -1;
                 }
 
-                elements()[n] = (jshort) PyInt_AS_LONG(obj);
+                elements()[n] = (jshort) PyLong_AS_LONG(obj);
                 return 0;
             }
         }

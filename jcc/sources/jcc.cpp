@@ -83,8 +83,7 @@ static PyMethodDef t_jccenv_methods[] = {
 };
 
 PyTypeObject PY_TYPE(JCCEnv) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "jcc.JCCEnv",                        /* tp_name */
     sizeof(t_jccenv),                    /* tp_basicsize */
     0,                                   /* tp_itemsize */
@@ -92,7 +91,7 @@ PyTypeObject PY_TYPE(JCCEnv) = {
     0,                                   /* tp_print */
     0,                                   /* tp_getattr */
     0,                                   /* tp_setattr */
-    0,                                   /* tp_compare */
+    0,                                   /* tp_reserved */
     0,                                   /* tp_repr */
     0,                                   /* tp_as_number */
     0,                                   /* tp_as_sequence */
@@ -126,10 +125,10 @@ PyTypeObject PY_TYPE(JCCEnv) = {
 
 static void t_jccenv_dealloc(t_jccenv *self)
 {
-    self->ob_type->tp_free((PyObject *) self);
+    self->ob_base.ob_type->tp_free((PyObject *) self);
 }
 
-static void add_option(char *name, char *value, JavaVMOption *option)
+static void add_option(char *name, const char *value, JavaVMOption *option)
 {
     char *buf = new char[strlen(name) + strlen(value) + 1];
 
@@ -138,7 +137,8 @@ static void add_option(char *name, char *value, JavaVMOption *option)
 }
 
 #ifdef _jcc_lib
-static void add_paths(char *name, char *p0, char *p1, JavaVMOption *option)
+static void add_paths(char *name, const char *p0, const char *p1,
+                      JavaVMOption *option)
 {
 #if defined(_MSC_VER) || defined(__WIN32)
     char pathsep = ';';
@@ -163,7 +163,7 @@ static PyObject *t_jccenv_attachCurrentThread(PyObject *self, PyObject *args)
 
     result = env->attachCurrentThread(name, asDaemon);
         
-    return PyInt_FromLong(result);
+    return PyLong_FromLong(result);
 }
 
 static PyObject *t_jccenv_detachCurrentThread(PyObject *self)
@@ -172,7 +172,7 @@ static PyObject *t_jccenv_detachCurrentThread(PyObject *self)
 
     env->set_vm_env(NULL);
 
-    return PyInt_FromLong(result);
+    return PyLong_FromLong(result);
 }
 
 static PyObject *t_jccenv_isCurrentThreadAttached(PyObject *self)
@@ -194,11 +194,19 @@ static PyObject *t_jccenv_isShared(PyObject *self)
 
 static PyObject *t_jccenv_strhash(PyObject *self, PyObject *arg)
 {
-    int hash = PyObject_Hash(arg);
-    char buffer[10];
+    long hash = PyObject_Hash(arg);
+    char buffer[20];
 
+    if (sizeof(long) == 4)
+    {
     sprintf(buffer, "%08x", (unsigned int) hash);
-    return PyString_FromStringAndSize(buffer, 8);
+        return PyUnicode_FromStringAndSize(buffer, 8);
+}
+    else
+    {
+        sprintf(buffer, "%016lx", (unsigned long) hash);
+        return PyUnicode_FromStringAndSize(buffer, 16);
+    }
 }
 
 static PyObject *t_jccenv__dumpRefs(PyObject *self,
@@ -227,13 +235,13 @@ static PyObject *t_jccenv__dumpRefs(PyObject *self,
         if (classes)  // return dict of { class name: instance count }
         {
             char *name = env->getClassName(iter->second.global);
-            PyObject *key = PyString_FromString(name);
+            PyObject *key = PyUnicode_FromString(name);
             PyObject *value = PyDict_GetItem(result, key);
 
             if (value == NULL)
-                value = PyInt_FromLong(1);
+                value = PyLong_FromLong(1);
             else
-                value = PyInt_FromLong(PyInt_AS_LONG(value) + 1);
+                value = PyLong_FromLong(PyLong_AsLong(value) + 1);
 
             PyDict_SetItem(result, key, value);
             Py_DECREF(key);
@@ -244,8 +252,8 @@ static PyObject *t_jccenv__dumpRefs(PyObject *self,
         else if (values)  // return list of (value string, ref count)
         {
             char *str = env->toString(iter->second.global);
-            PyObject *key = PyString_FromString(str);
-            PyObject *value = PyInt_FromLong(iter->second.count);
+            PyObject *key = PyUnicode_FromString(str);
+            PyObject *value = PyLong_FromLong(iter->second.count);
 
 #if PY_VERSION_HEX < 0x02040000
             PyList_SET_ITEM(result, count++, Py_BuildValue("(OO)", key, value));
@@ -259,8 +267,8 @@ static PyObject *t_jccenv__dumpRefs(PyObject *self,
         }
         else  // return list of (id hash code, ref count)
         {
-            PyObject *key = PyInt_FromLong(iter->first);
-            PyObject *value = PyInt_FromLong(iter->second.count);
+            PyObject *key = PyLong_FromLong(iter->first);
+            PyObject *value = PyLong_FromLong(iter->second.count);
 
 #if PY_VERSION_HEX < 0x02040000
             PyList_SET_ITEM(result, count++, Py_BuildValue("(OO)", key, value));
@@ -289,7 +297,7 @@ static PyObject *t_jccenv__addClassPath(PyObject *self, PyObject *args)
 
 static PyObject *t_jccenv__get_jni_version(PyObject *self, void *data)
 {
-    return PyInt_FromLong(env->getJNIVersion());
+    return PyLong_FromLong(env->getJNIVersion());
 }
 
 static PyObject *t_jccenv__get_java_version(PyObject *self, void *data)
@@ -303,7 +311,7 @@ static PyObject *t_jccenv__get_classpath(PyObject *self, void *data)
 
     if (classpath)
     {
-        PyObject *result = PyString_FromString(classpath);
+        PyObject *result = PyUnicode_FromString(classpath);
 
         free(classpath);
         return result;
@@ -334,9 +342,9 @@ _DLL_EXPORT PyObject *initJCC(PyObject *module)
     static int _once_only = 1;
 #if defined(_MSC_VER) || defined(__WIN32)
 #define verstring(n) #n
-    PyObject *ver = PyString_FromString(verstring(JCC_VER));
+    PyObject *ver = PyUnicode_FromString(verstring(JCC_VER));
 #else
-    PyObject *ver = PyString_FromString(JCC_VER);
+    PyObject *ver = PyUnicode_FromString(JCC_VER);
 #endif
     PyObject_SetAttrString(module, "JCC_VERSION", ver); Py_DECREF(ver);
 
@@ -361,7 +369,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         "classpath", "initialheap", "maxheap", "maxstack",
         "vmargs", NULL
     };
-    char *classpath = NULL;
+    const char *classpath = NULL;
     char *initialheap = NULL, *maxheap = NULL, *maxstack = NULL;
     PyObject *vmargs = NULL;
 
@@ -374,6 +382,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
     if (env->vm)
     {
         PyObject *module_cp = NULL;
+        PyObject *bytes = NULL;
 
         if (initialheap || maxheap || maxstack || vmargs)
         {
@@ -385,13 +394,23 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         if (classpath == NULL && self != NULL)
         {
             module_cp = PyObject_GetAttrString(self, "CLASSPATH");
-            if (module_cp != NULL)
-                classpath = PyString_AsString(module_cp);
+            if (module_cp)
+            {
+                bytes = PyUnicode_AsUTF8String(module_cp);
+                if (!bytes)
+                {
+                    Py_DECREF(module_cp);
+                    return NULL;
+        }
+
+                classpath = PyBytes_AS_STRING(bytes);
+            }
         }
 
         if (classpath && classpath[0])
             env->setClassPath(classpath);
 
+        Py_XDECREF(bytes);
         Py_XDECREF(module_cp);
 
         return getVMEnv(self);
@@ -404,7 +423,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         JavaVM *vm;
         unsigned int nOptions = 0;
         PyObject *module_cp = NULL;
-
+        PyObject *bytes = NULL;
         vm_args.version = JNI_VERSION_1_4;
         JNI_GetDefaultJavaVMInitArgs(&vm_args);
 
@@ -412,20 +431,37 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         {
             module_cp = PyObject_GetAttrString(self, "CLASSPATH");
             if (module_cp != NULL)
-                classpath = PyString_AsString(module_cp);
+                classpath = PyUnicode_AsUTF8(module_cp);
         }
 
 #ifdef _jcc_lib
         PyObject *jcc = PyImport_ImportModule("jcc");
+        if (!jcc)
+            return NULL;
+
         PyObject *cp = PyObject_GetAttrString(jcc, "CLASSPATH");
+        if (!cp)
+        {
+            Py_DECREF(jcc);
+            return NULL;
+        }
+
+        PyObject *cpbytes = PyUnicode_AsUTF8String(cp);
+        if (!cpbytes)
+        {
+            Py_DECREF(cp);
+            Py_DECREF(jcc);
+            return NULL;
+        }
 
         if (classpath)
-            add_paths("-Djava.class.path=", PyString_AsString(cp), classpath,
-                      &vm_options[nOptions++]);
+            add_paths("-Djava.class.path=", PyBytes_AS_STRING(cpbytes),
+                      classpath, &vm_options[nOptions++]);
         else
-            add_option("-Djava.class.path=", PyString_AsString(cp),
+            add_option("-Djava.class.path=", PyBytes_AS_STRING(cpbytes),
                        &vm_options[nOptions++]);
             
+        Py_DECREF(cpbytes);
         Py_DECREF(cp);
         Py_DECREF(jcc);
 #else
@@ -434,6 +470,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
                        &vm_options[nOptions++]);
 #endif
 
+        Py_XDECREF(bytes);
         Py_XDECREF(module_cp);
 
         if (initialheap)
@@ -443,13 +480,9 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
         if (maxstack)
             add_option("-Xss", maxstack, &vm_options[nOptions++]);
 
-        if (vmargs != NULL && PyString_Check(vmargs))
+        if (vmargs != NULL && PyUnicode_Check(vmargs))
         {
-#ifdef _MSC_VER
-            char *buf = _strdup(PyString_AS_STRING(vmargs));
-#else
-            char *buf = strdup(PyString_AS_STRING(vmargs));
-#endif
+            char *buf = PyUnicode_AsUTF8(vmargs);
             char *sep = ",";
             char *option;
 
@@ -459,7 +492,6 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
                     add_option("", option, &vm_options[nOptions++]);
                 else
                 {
-                    free(buf);
                     for (unsigned int i = 0; i < nOptions; i++)
                         delete vm_options[i].optionString;
                     PyErr_Format(PyExc_ValueError,
@@ -467,7 +499,6 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
                     return NULL;
                 }
             }
-            free(buf);
         }
         else if (vmargs != NULL && PySequence_Check(vmargs))
         {
@@ -480,9 +511,9 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
             for (int i = 0; i < PySequence_Fast_GET_SIZE(fast); ++i) {
                 PyObject *arg = PySequence_Fast_GET_ITEM(fast, i);
 
-                if (PyString_Check(arg))
+                if (PyUnicode_Check(arg))
                 {
-                    char *option = PyString_AS_STRING(arg);
+                    char *option = PyUnicode_AsUTF8(arg);
 
                     if (nOptions < sizeof(vm_options) / sizeof(JavaVMOption))
                         add_option("", option, &vm_options[nOptions++]);
@@ -558,7 +589,7 @@ _DLL_EXPORT PyObject *getJavaModule(PyObject *module,
     if (parent[0] == '\0')
     {
         parent_module = NULL;
-        full_name = PyString_FromString(name);
+        full_name = PyUnicode_FromString(name);
     }
     else if ((parent_module = PyDict_GetItemString(modules, parent)) == NULL)
     {
@@ -566,13 +597,13 @@ _DLL_EXPORT PyObject *getJavaModule(PyObject *module,
         return NULL;
     }
     else
-        full_name = PyString_FromFormat("%s.%s", parent, name);
+        full_name = PyUnicode_FromFormat("%s.%s", parent, name);
 
     PyObject *child_module = PyDict_GetItem(modules, full_name);
 
     if (child_module == NULL)
     {
-        child_module = PyModule_New(PyString_AS_STRING(full_name));
+        child_module = PyModule_New(PyUnicode_AsUTF8(full_name));
         if (child_module != NULL)
         {
             if (parent_module != NULL)
@@ -589,7 +620,7 @@ _DLL_EXPORT PyObject *getJavaModule(PyObject *module,
      */
     if (child_module != NULL)
     {
-        PyObject *__file__ = PyString_FromString("__file__");
+        PyObject *__file__ = PyUnicode_FromString("__file__");
         PyObject *file = PyDict_GetItem(PyModule_GetDict(module), __file__);
 
         if (file != NULL)
@@ -599,6 +630,7 @@ _DLL_EXPORT PyObject *getJavaModule(PyObject *module,
 
     return child_module;
 }
+
 
 #ifdef _jcc_lib
 
@@ -611,43 +643,61 @@ static void raise_error(JNIEnv *vm_env, const char *message)
 static void _PythonVM_init(JNIEnv *vm_env, jobject self,
                            jstring programName, jobjectArray args)
 {
-    const char *str = vm_env->GetStringUTFChars(programName, JNI_FALSE);
+    const jchar *jchars = vm_env->GetStringChars(programName, JNI_FALSE);
+    jsize len = vm_env->GetStringLength(programName);
+    wchar_t *wchars = (wchar_t *) calloc(len + 1, sizeof(wchar_t));
 #ifdef linux
     char buf[32];
 
-    // load python runtime for other .so modules to link (such as _time.so)
+    /* load python runtime for other .so modules to link (such as _time.so) */
     sprintf(buf, "libpython%d.%d.so", PY_MAJOR_VERSION, PY_MINOR_VERSION);
     dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 #endif
 
-    Py_SetProgramName((char *) str);
+    if (wchars != NULL)
+    {
+        for (int i = 0; i < len; i++)
+            wchars[i] = (wchar_t) jchars[i];
+        wchars[len] = '\0';
+        vm_env->ReleaseStringChars(programName, jchars);
+
+        Py_SetProgramName((wchar_t *) wchars); /* wchars leaked to python vm */
+    }
 
     PyEval_InitThreads();
     Py_Initialize();
 
     if (args)
     {
-        int argc = vm_env->GetArrayLength(args);
-        char **argv = (char **) calloc(argc + 1, sizeof(char *));
+        int argc = vm_env->GetArrayLength(args) + 1;
+        wchar_t **argv = (wchar_t **) calloc(argc, sizeof(wchar_t *));
 
-        argv[0] = (char *) str;
-        for (int i = 0; i < argc; i++) {
-            jstring arg = (jstring) vm_env->GetObjectArrayElement(args, i);
-            argv[i + 1] = (char *) vm_env->GetStringUTFChars(arg, JNI_FALSE);
+        argv[0] = wchars;
+        for (int i = 1; i < argc; i++) {
+            jstring arg = (jstring) vm_env->GetObjectArrayElement(args, i - 1);
+
+            jchars = vm_env->GetStringChars(arg, JNI_FALSE);
+            len = vm_env->GetStringLength(arg);
+
+            wchars = argv[i] = (wchar_t *) calloc(len + 1, sizeof(wchar_t));
+            if (wchars != NULL)
+            {
+                for (int j = 0; j < len; j++)
+                    wchars[j] = (wchar_t) jchars[j];
+                wchars[len] = '\0';
+        }
+            vm_env->ReleaseStringChars(arg, jchars);
         }
 
-        PySys_SetArgv(argc + 1, argv);
+        PySys_SetArgv(argc, argv);
 
-        for (int i = 0; i < argc; i++) {
-            jstring arg = (jstring) vm_env->GetObjectArrayElement(args, i);
-            vm_env->ReleaseStringUTFChars(arg, argv[i + 1]);
-        }
+        for (int i = 1; i < argc; i++)
+            free(argv[i]);
         free(argv);
     }
     else
-        PySys_SetArgv(1, (char **) &str);
+        PySys_SetArgv(1, (wchar_t **) &wchars);
 
-    vm_env->ReleaseStringUTFChars(programName, str);
     PyEval_ReleaseLock();
 }
 
@@ -702,7 +752,7 @@ static jobject _PythonVM_instantiate(JNIEnv *vm_env, jobject self,
         return NULL;
     }
 
-    jobj = (jobject) PyCObject_AsVoidPtr(cObj);
+    jobj = (jobject) PyCapsule_GetPointer(cObj, "jobject");
     Py_DECREF(cObj);
 
     jobj = vm_env->NewLocalRef(jobj);

@@ -70,7 +70,7 @@ def patch_setuptools(with_setuptools):
             build_ext.libtype = 'static'
             build_ext.link_shared_object = st_link_shared_object
                 
-        print >>sys.stderr, "Applied shared mode monkey patch to:", setuptools
+        print("Applied shared mode monkey patch to:", setuptools, file=sys.stderr)
         return True # monkey patch was applied
 
     return enable_shared

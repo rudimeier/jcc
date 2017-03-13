@@ -114,7 +114,7 @@ namespace java {
             jint length;
 
             OBJ_CALL(length = self->object.length());
-            return PyInt_FromLong(length);
+            return PyLong_FromLong(length);
         }
     }
 }

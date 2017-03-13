@@ -152,14 +152,17 @@ namespace java {
 
             static PyObject *t_Modifier_isPublic(PyTypeObject *type, PyObject *arg)
             {
-                if (!PyInt_Check(arg))
+                if (!PyLong_Check(arg))
                 {
                     PyErr_SetObject(PyExc_TypeError, arg);
                     return NULL;
                 }
 
-                int mod = PyInt_AsLong(arg);
+                int mod = PyLong_AsLong(arg);
                 int isPublic;
+
+                if (PyErr_Occurred())
+                    return NULL;
 
                 OBJ_CALL(isPublic = Modifier::isPublic(mod));
                 Py_RETURN_BOOL(isPublic);
@@ -167,14 +170,17 @@ namespace java {
 
             static PyObject *t_Modifier_isStatic(PyTypeObject *type, PyObject *arg)
             {
-                if (!PyInt_Check(arg))
+                if (!PyLong_Check(arg))
                 {
                     PyErr_SetObject(PyExc_TypeError, arg);
                     return NULL;
                 }
 
-                int mod = PyInt_AsLong(arg);
+                int mod = PyLong_AsLong(arg);
                 int isStatic;
+
+                if (PyErr_Occurred())
+                    return NULL;
 
                 OBJ_CALL(isStatic = Modifier::isStatic(mod));
                 Py_RETURN_BOOL(isStatic);
@@ -182,14 +188,17 @@ namespace java {
 
             static PyObject *t_Modifier_isNative(PyTypeObject *type, PyObject *arg)
             {
-                if (!PyInt_Check(arg))
+                if (!PyLong_Check(arg))
                 {
                     PyErr_SetObject(PyExc_TypeError, arg);
                     return NULL;
                 }
 
-                int mod = PyInt_AsLong(arg);
+                int mod = PyLong_AsLong(arg);
                 int isNative;
+
+                if (PyErr_Occurred())
+                    return NULL;
 
                 OBJ_CALL(isNative = Modifier::isNative(mod));
                 Py_RETURN_BOOL(isNative);
@@ -197,14 +206,17 @@ namespace java {
 
             static PyObject *t_Modifier_isFinal(PyTypeObject *type, PyObject *arg)
             {
-                if (!PyInt_Check(arg))
+                if (!PyLong_Check(arg))
                 {
                     PyErr_SetObject(PyExc_TypeError, arg);
                     return NULL;
                 }
 
-                int mod = PyInt_AsLong(arg);
+                int mod = PyLong_AsLong(arg);
                 int isFinal;
+
+                if (PyErr_Occurred())
+                    return NULL;
 
                 OBJ_CALL(isFinal = Modifier::isFinal(mod));
                 Py_RETURN_BOOL(isFinal);
@@ -212,14 +224,17 @@ namespace java {
 
             static PyObject *t_Modifier_isAbstract(PyTypeObject *type, PyObject *arg)
             {
-                if (!PyInt_Check(arg))
+                if (!PyLong_Check(arg))
                 {
                     PyErr_SetObject(PyExc_TypeError, arg);
                     return NULL;
                 }
 
-                int mod = PyInt_AsLong(arg);
+                int mod = PyLong_AsLong(arg);
                 int isAbstract;
+
+                if (PyErr_Occurred())
+                    return NULL;
 
                 OBJ_CALL(isAbstract = Modifier::isAbstract(mod));
                 Py_RETURN_BOOL(isAbstract);
@@ -227,14 +242,17 @@ namespace java {
 
             static PyObject *t_Modifier_isPrivate(PyTypeObject *type, PyObject *arg)
             {
-                if (!PyInt_Check(arg))
+                if (!PyLong_Check(arg))
                 {
                     PyErr_SetObject(PyExc_TypeError, arg);
                     return NULL;
                 }
 
-                int mod = PyInt_AsLong(arg);
+                int mod = PyLong_AsLong(arg);
                 int isPrivate;
+
+                if (PyErr_Occurred())
+                    return NULL;
 
                 OBJ_CALL(isPrivate = Modifier::isPrivate(mod));
                 Py_RETURN_BOOL(isPrivate);
@@ -242,14 +260,17 @@ namespace java {
 
             static PyObject *t_Modifier_isProtected(PyTypeObject *type, PyObject *arg)
             {
-                if (!PyInt_Check(arg))
+                if (!PyLong_Check(arg))
                 {
                     PyErr_SetObject(PyExc_TypeError, arg);
                     return NULL;
                 }
 
-                int mod = PyInt_AsLong(arg);
+                int mod = PyLong_AsLong(arg);
                 int isProtected;
+
+                if (PyErr_Occurred())
+                    return NULL;
 
                 OBJ_CALL(isProtected = Modifier::isProtected(mod));
                 Py_RETURN_BOOL(isProtected);

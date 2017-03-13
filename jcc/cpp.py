@@ -10,39 +10,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os, sys, zipfile, _jcc
-
-python_ver = '%d.%d.%d' %(sys.version_info[0:3])
-if python_ver < '2.4':
-    from sets import Set as set
-
-    def split_pkg(string, sep):
-        parts = string.split(sep)
-        if len(parts) > 1:
-            return sep.join(parts[:-1]), parts[-1]
-        return parts
-
-    def sort(list, fn=None, key=None):
-        if fn:
-            list.sort(fn)
-        elif key:
-            def fn(x, y):
-                return cmp(key(x), key(y))
-            list.sort(fn)
-        else:
-            list.sort()
-
-else:
-    def split_pkg(string, sep):
-        return string.rsplit(sep, 1)
-
-    def sort(list, fn=None, key=None):
-        if fn:
-            list.sort(cmp=fn)
-        elif key:
-            list.sort(key=key)
-        else:
-            list.sort()
+import os, sys, zipfile
+import jcc._jcc as _jcc
 
 
 class JavaError(Exception):
@@ -63,8 +32,8 @@ class InvalidArgsError(Exception):
 
 
 _jcc._set_exception_types(JavaError, InvalidArgsError)
-from _jcc import findClass as _findClass
-from _jcc import *
+from jcc._jcc import findClass as _findClass
+from jcc._jcc import *
 
 
 def findClass(className):
@@ -72,11 +41,11 @@ def findClass(className):
     try:
         cls = _findClass(className)
     except:
-        print >>sys.stderr, "While loading", className
+        print("While loading", className, file=sys.stderr)
         raise
 
     if cls is None:
-        raise ValueError, className
+        raise ValueError(className)
 
     return cls
 
@@ -154,9 +123,9 @@ def argnames(params, cls):
 
     count = len(params)
     decls = ', '.join(["%s a%d" %(typename(params[i], cls, True), i)
-                       for i in xrange(count)])
+                       for i in range(count)])
     args = ', '.join(['a%d%s' %(i, not params[i].isPrimitive() and '.this$' or '')
-                      for i in xrange(count)])
+                      for i in range(count)])
 
     return decls, ', ' + args
 
@@ -200,7 +169,7 @@ def known(cls, typeset, declares, packages, excludes, generics):
             return known(GenericArrayType.cast_(cls).getGenericComponentType(),
                          typeset, declares, packages, excludes, True)
         else:
-            raise TypeError, (cls, cls.getClass())
+            raise TypeError((cls, cls.getClass()))
 
     while cls.isArray():
         cls = cls.getComponentType()
@@ -216,7 +185,7 @@ def known(cls, typeset, declares, packages, excludes, generics):
         declares.add(cls)
         return True
 
-    if split_pkg(className, '.')[0] in packages:
+    if className.rsplit('.', 1)[0] in packages:
         typeset.add(cls)
         declares.add(cls)
         cls = cls.getSuperclass()
@@ -250,7 +219,7 @@ def addRequiredTypes(cls, typeset, generics):
             gat = GenericArrayType.cast_(cls)
             addRequiredTypes(gat.getGenericComponentType(), typeset, True)
         elif not (TypeVariable.instance_(cls) or WildcardType.instance_(cls)):
-            raise NotImplementedError, repr(cls)
+            raise NotImplementedError(repr(cls))
     else:
         if cls not in typeset:
             typeset.add(cls)
@@ -306,7 +275,7 @@ def find_method(cls, name, params):
             else:
                 method = cls.getMethod(name, params)
             break
-        except JavaError, e:
+        except JavaError as e:
             if (e.getJavaException().getClass().getName() == 'java.lang.NoSuchMethodException'):
                 if not declared:
                     declared = True
@@ -355,7 +324,7 @@ def signature(fn, argsOnly=False):
 
 def forward(out, namespace, indent):
 
-    for name, entries in namespace.iteritems():
+    for name, entries in namespace.items():
         if entries is True:
             line(out, indent, 'class %s;', cppname(name))
         else:
@@ -448,23 +417,23 @@ def jcc(args):
                 i += 1
                 initvm_args['maxheap'] = args[i]
             elif arg == '--python':
-                from python import python, module
+                from .python import python, module
                 i += 1
                 moduleName = args[i]
             elif arg == '--module':
                 i += 1
                 modules.append(args[i])
             elif arg == '--build':
-                from python import compile
+                from .python import compile
                 build = True
             elif arg == '--install':
-                from python import compile
+                from .python import compile
                 install = True
             elif arg == '--compile':
-                from python import compile
+                from .python import compile
                 recompile = True
             elif arg == '--egg-info':
-                from python import compile
+                from .python import compile
                 egg_info = True
             elif arg == '--extra-setup-arg':
                 i += 1
@@ -514,10 +483,10 @@ def jcc(args):
             elif arg == '--shared':
                 shared = True
             elif arg == '--bdist':
-                from python import compile
+                from .python import compile
                 dist = True
             elif arg == '--wininst':
-                from python import compile
+                from .python import compile
                 wininst = True
                 dist = True
             elif arg == '--compiler':
@@ -540,7 +509,7 @@ def jcc(args):
                 i += 1
                 imports[args[i]] = ()
             else:
-                raise ValueError, "Invalid argument: %s" %(arg)
+                raise ValueError("Invalid argument: %s" %(arg))
         else:
             if ':' in arg:
                 arg, method = arg.split(':', 1)
@@ -564,11 +533,11 @@ def jcc(args):
         if shared:
             imports = dict((__import__(import_), set()) for import_ in imports)
         else:
-            raise ValueError, "--shared must be used when using --import"
+            raise ValueError("--shared must be used when using --import")
 
     if recompile or not build and (install or dist or egg_info):
         if moduleName is None:
-            raise ValueError, 'module name not specified (use --python)'
+            raise ValueError("module name not specified (use --python)")
         else:
             compile(env, os.path.dirname(args[0]), output, moduleName,
                     install, dist, debug, jars, version,
@@ -578,7 +547,8 @@ def jcc(args):
                     egg_info, extra_setup_args)
     else:
         if imports:
-            def walk((include, importset), dirname, names):
+            def walk(args, dirname, names):
+                (include, importset) = args
                 for name in names:
                     if name.endswith('.h'):
                         className = os.path.join(dirname[len(include) + 1:],
@@ -586,7 +556,7 @@ def jcc(args):
                         if os.path.sep != '/':
                             className = className.replace(os.path.sep, '/')
                         importset.add(findClass(className))
-            for import_, importset in imports.iteritems():
+            for import_, importset in imports.items():
                 env._addClassPath(import_.CLASSPATH)
                 include = os.path.join(import_.__dir__, 'include')
                 os.path.walk(include, walk, (include, importset))
@@ -635,22 +605,22 @@ def jcc(args):
             if not os.path.isdir(cppdir):
                 os.makedirs(cppdir)
             if wrapperFiles <= 1:
-                out_cpp = file(os.path.join(cppdir, '__wrap__.cpp'), 'w')
+                out_cpp = open(os.path.join(cppdir, '__wrap__.cpp'), 'w')
             else:
                 fileCount = 1
                 fileName = '__wrap%02d__.cpp' %(fileCount)
-                out_cpp = file(os.path.join(cppdir, fileName), 'w')
+                out_cpp = open(os.path.join(cppdir, fileName), 'w')
 
         done = set()
         pythonNames = {}
-        for importset in imports.itervalues():
+        for importset in imports.values():
             done.update(importset)
             if moduleName:
                 for cls in importset:
                     name = split_pkg(cls.getName(), '.')[-1]
                     if not use_full_names:
                         if name in pythonNames:
-                            raise ValueError, (cls, 'python class name already in use, use --rename', name, pythonNames[name])
+                            raise ValueError((cls, 'python class name already in use, use --rename', name, pythonNames[name]))
                         else:
                             pythonNames[name] = cls
 
@@ -668,7 +638,7 @@ def jcc(args):
                     os.makedirs(dir)
 
                 fileName = os.path.join(dir, names[-1])
-                out_h = file(fileName + '.h', "w")
+                out_h = open(fileName + '.h', "w")
                 line(out_h, 0, '#ifndef %s_H', '_'.join(names))
                 line(out_h, 0, '#define %s_H', '_'.join(names))
 
@@ -680,7 +650,7 @@ def jcc(args):
                            _dll_export)
 
                 if not allInOne:
-                    out_cpp = file(fileName + '.cpp', 'w')
+                    out_cpp = open(fileName + '.cpp', 'w')
                 names, superNames = code(env, out_cpp,
                                          cls, superCls, constructors,
                                          methods, protectedMethods,
@@ -690,7 +660,7 @@ def jcc(args):
                     name = renames.get(className) or names[-1]
                     if not use_full_names:
                         if name in pythonNames:
-                            raise ValueError, (cls, 'python class name already in use, use --rename', name, pythonNames[name])
+                            raise ValueError((cls, 'python class name already in use, use --rename', name, pythonNames[name]))
                         else:
                             pythonNames[name] = cls
                     python(env, out_h, out_cpp,
@@ -713,7 +683,7 @@ def jcc(args):
                         out_cpp.close()
                         fileCount += 1
                         fileName = '__wrap%02d__.cpp' %(fileCount)
-                        out_cpp = file(os.path.join(cppdir, fileName), 'w')
+                        out_cpp = open(os.path.join(cppdir, fileName), 'w')
                         classCount = 0
                         
             done.update(todo)
@@ -723,7 +693,7 @@ def jcc(args):
             out_cpp.close()
 
         if moduleName:
-            out = file(os.path.join(cppdir, moduleName) + '.cpp', 'w')
+            out = open(os.path.join(cppdir, moduleName) + '.cpp', 'w')
             module(out, allInOne, done, imports, cppdir, moduleName,
                    shared, generics, use_full_names)
             out.close()
@@ -753,7 +723,7 @@ def header(env, out, cls, typeset, packages, excludes, generics,
                 pt = ParameterizedType.cast_(interface)
                 interface = Class.cast_(pt.getRawType())
             else:
-                raise NotImplementedError, repr(interface)
+                raise NotImplementedError(repr(interface))
             if superCls and interface.isAssignableFrom(superCls):
                 continue
             if known(interface, typeset, declares, packages, excludes, False):
@@ -814,7 +784,7 @@ def header(env, out, cls, typeset, packages, excludes, generics,
                     break
             else:
                 constructors.append(constructor)
-    sort(constructors, key=lambda x: len(x.getParameterTypes()))
+    constructors.sort(key=lambda x: len(x.getParameterTypes()))
 
     methods = {}
     protectedMethods = []
@@ -850,15 +820,9 @@ def header(env, out, cls, typeset, packages, excludes, generics,
         elif Modifier.isProtected(modifiers):
             protectedMethods.append(method)
 
-    def _compare(m0, m1):
-        value = cmp(m0.getName(), m1.getName())
-        if value == 0:
-            value = len(m0.getParameterTypes()) - len(m1.getParameterTypes())
-        return value
-
-    methods = methods.values()
-    sort(methods, fn=_compare)
-    methodNames = set([cppname(method.getName()) for method in methods])
+    methods = list(methods.values())
+    methods.sort(key=lambda x: (x.getName(), len(x.getParameterTypes())))
+    methodNames = set(cppname(method.getName()) for method in methods)
 
     for constructor in constructors:
         if generics:
@@ -892,8 +856,8 @@ def header(env, out, cls, typeset, packages, excludes, generics,
                 fields.append(field)
             else:
                 instanceFields.append(field)
-    sort(fields, key=lambda x: x.getName())
-    sort(instanceFields, key=lambda x: x.getName())
+    fields.sort(key=lambda x: x.getName())
+    instanceFields.sort(key=lambda x: x.getName())
 
     line(out)
     superNames = superClsName.split('.')
@@ -974,7 +938,7 @@ def header(env, out, cls, typeset, packages, excludes, generics,
             fieldType = field.getType()
             fieldName = cppname(field.getName())
             if fieldName in methodNames:
-                print >>sys.stderr, "  Warning: renaming static variable '%s' on class %s to '%s%s' since it is shadowed by a method of same name." %(fieldName, '.'.join(names), fieldName, RENAME_FIELD_SUFFIX)
+                print("  Warning: renaming static variable '%s' on class %s to '%s%s' since it is shadowed by a method of same name." %(fieldName, '.'.join(names), fieldName, RENAME_FIELD_SUFFIX), file=sys.stderr)
                 fieldName += RENAME_FIELD_SUFFIX
             if fieldType.isPrimitive():
                 line(out, indent, 'static %s %s;',

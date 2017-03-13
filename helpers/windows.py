@@ -19,7 +19,7 @@ if sys.platform == "win32":
     # figure out where the JDK lives
 
     try:
-        import _winreg as wreg
+        import winreg as wreg
 
         class WindowsRegistry:
             # see the Python Cookbook, #146305, Dirk Holtwick

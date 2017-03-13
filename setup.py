@@ -19,6 +19,8 @@ if machine.startswith("iPod") or machine.startswith("iPhone"):
     platform = 'ipod'
 elif sys.platform == "win32" and "--compiler=mingw32" in sys.argv:
     platform = 'mingw32'
+elif sys.platform == "linux":
+    platform = 'linux2'
 else:
     platform = sys.platform
 
@@ -144,7 +146,7 @@ LFLAGS = {
     'sunos5': ['-L%(sunos5)s/jre/lib/i386' %(JDK), '-ljava',
                '-L%(sunos5)s/jre/lib/i386/client' %(JDK), '-ljvm',
                '-R%(sunos5)s/jre/lib/i386:%(sunos5)s/jre/lib/i386/client' %(JDK)],
-    'win32': ['/LIBPATH:%(win32)s/lib' %(JDK), 'Ws2_32.lib', 'jvm.lib'],
+    'win32': ['/DLL', '/LIBPATH:%(win32)s/lib' %(JDK), 'Ws2_32.lib', 'jvm.lib'],
     'mingw32': ['-L%(mingw32)s/lib' %(JDK), '-ljvm'],
     'freebsd7': ['-L%(freebsd7)s/jre/lib/i386' %(JDK), '-ljava', '-lverify',
                  '-L%(freebsd7)s/jre/lib/i386/client' %(JDK), '-ljvm',
@@ -224,9 +226,6 @@ try:
             from setuptools.extension import Library
 
 except ImportError:
-    if sys.version_info < (2, 4):
-        raise ImportError, 'setuptools is required when using Python 2.3'
-    else:
         from distutils.core import setup, Extension
         with_setuptools = None
         enable_shared = False
@@ -331,8 +330,8 @@ def main(debug):
                           '-current_version', jcc_ver,
                           '-compatibility_version', jcc_ver]
         elif platform == 'linux2':
-            kwds["extra_link_args"] = \
-                lflags + ['-lpython%s.%s' %(sys.version_info[0:2])]
+            from setuptools.command.build_ext import _CONFIG_VARS
+            kwds["extra_link_args"] = lflags + [_CONFIG_VARS['BLDLIBRARY']]
             kwds["force_shared"] = True    # requires jcc/patches/patch.43
         elif platform in IMPLIB_LFLAGS:
             jcclib = 'jcc%s.lib' %(debug and '_d' or '')
@@ -353,11 +352,11 @@ def main(debug):
             os.makedirs('jcc/classes')
         try:
             process = Popen(args, stderr=PIPE)
-        except Exception, e:
-            raise type(e), "%s: %s" %(e, args)
+        except Exception as e:
+            raise type(e)("%s: %s" %(e, args))
         process.wait()
         if process.returncode != 0:
-            raise OSError, process.stderr.read()
+            raise OSError(process.stderr.read())
         package_data.append('classes/org/apache/jcc/PythonVM.class')
         package_data.append('classes/org/apache/jcc/PythonException.class')
 
@@ -365,11 +364,11 @@ def main(debug):
         args.extend(('-d', 'javadoc', '-sourcepath', 'java', 'org.apache.jcc'))
         try:
             process = Popen(args, stderr=PIPE)
-        except Exception, e:
-            raise type(e), "%s: %s" %(e, args)
+        except Exception as e:
+            raise type(e)("%s: %s" %(e, args))
         process.wait()
         if process.returncode != 0:
-            raise OSError, process.stderr.read()
+            raise OSError(process.stderr.read())
 
     extensions.append(Extension('jcc._jcc',
                                 extra_compile_args=cflags,

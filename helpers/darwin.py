@@ -24,17 +24,20 @@ if sys.platform == "darwin":
     try:
         args = ['/usr/libexec/java_home']
         process = Popen(args, stdout=PIPE, stderr=PIPE)
-    except Exception, e:
-        print >>sys.stderr, "%s: %s" %(e, args)
+    except Exception as e:
+        print ('{}: {}'.format(e, args), file=sys.stderr)
     else:
         process.wait()
         if process.returncode == 0:
             _path = process.stdout.read().strip()
+            _path = _path.decode("utf-8")
             if os.path.exists(os.path.join(_path, "include", "jni.h")):
                 JAVAHOME = _path
-                print >>sys.stderr, 'found JAVAHOME =', JAVAHOME
+                print ('found JAVAHOME ={}'.format(JAVAHOME), file=sys.stderr)
         else:
-            print >>sys.stderr, process.stderr.read()
+            error = process.stderr.read().strip()
+            error = error.decode("utf-8")
+            print (error, file=sys.stderr)
 
     # figure out where the JDK Frameworks lives
     import platform, re
@@ -44,14 +47,14 @@ if sys.platform == "darwin":
     _path = "/System/Library/Frameworks/JavaVM.framework"
     if os.path.exists(os.path.join(_path, "Headers", "jni.h")):
         JAVAFRAMEWORKS = _path
-        print >>sys.stderr, 'found JAVAFRAMEWORKS =', JAVAFRAMEWORKS
+        print ('found JAVAFRAMEWORKS ={}'.format(JAVAFRAMEWORKS), file=sys.stderr)
     else:
-        # but their updates don't always match their documentation, 
+        # but their updates don't always match their documentation,
         # so look up the same path in the OS's /Developer tree
         _path = "/Developer/SDKs/MacOSX%s.sdk%s" %(_os_version, _path)
         if os.path.exists(os.path.join(_path, "Headers", "jni.h")):
             JAVAFRAMEWORKS = _path
-            print >>sys.stderr, 'found JAVAFRAMEWORKS =', JAVAFRAMEWORKS
+            print ('found JAVAFRAMEWORKS ={}'.format(JAVAFRAMEWORKS), file=sys.stderr)
 
     # monkeypatch customize_compiler so that we can remove -Wl,-x from LDSHARED
     # set in setuptools.command.build_ext.build_ext.setup_shlib_compiler

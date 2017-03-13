@@ -101,7 +101,7 @@ if len(sys.argv) == 1 or '--help' in sys.argv:
     --extra-setup-arg       - pass an extra argument on setup.py command line
                               (pip install uses --egg-base and --record params)
 '''
-    print help
+    print(help)
     sys.exit(0)
   
 cpp.jcc(sys.argv)

@@ -998,31 +998,24 @@ jstring JCCEnv::fromPyString(PyObject *object) const
 
     if (PyUnicode_Check(object))
     {
-        if (sizeof(Py_UNICODE) == sizeof(jchar))
-        {
-            jchar *buf = (jchar *) PyUnicode_AS_UNICODE(object);
-            jsize len = (jsize) PyUnicode_GET_SIZE(object);
+        jstring str;
+        Py_ssize_t len;
+        Py_UNICODE *pchars = PyUnicode_AsUnicodeAndSize(object, &len);
 
-            return get_vm_env()->NewString(buf, len);
-        }
+        if (!pchars)
+            str = NULL;
+        else if (sizeof(Py_UNICODE) == sizeof(jchar))
+            str = get_vm_env()->NewString((jchar*) pchars, (jsize) len);
         else
         {
-            jsize len = PyUnicode_GET_SIZE(object);
-            Py_UNICODE *pchars = PyUnicode_AS_UNICODE(object);
             jchar *jchars = new jchar[len];
-            jstring str;
-
             for (int i = 0; i < len; i++)
-                jchars[i] = (jchar) pchars[i];
-
+                jchars[i] = (jchar) pchars[i];  // broken
             str = get_vm_env()->NewString(jchars, len);
             delete[] jchars;
-
+        }
             return str;
         }
-    }
-    else if (PyString_Check(object))
-        return fromUTF(PyString_AS_STRING(object));
     else
     {
         PyObject *tuple = Py_BuildValue("(sO)", "expected a string", object);
