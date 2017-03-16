@@ -21,14 +21,6 @@
 #include "java/lang/Object.h"
 #include "macros.h"
 
-#if PY_VERSION_HEX < 0x02050000
-typedef int Py_ssize_t;
-typedef inquiry lenfunc;
-typedef intargfunc ssizeargfunc;
-typedef intintargfunc ssizessizeargfunc;
-typedef intobjargproc ssizeobjargproc;
-typedef intintobjargproc ssizessizeobjargproc;
-#endif
 
 typedef PyTypeObject **(*getparametersfn)(void *);
 typedef int (*boxfn)(PyTypeObject *, PyObject *, java::lang::Object *);
@@ -60,7 +52,7 @@ int _parseArgs(PyObject **args, unsigned int count, char *types,
 
 #define parseArgs(args, types, rest...) \
     _parseArgs(((PyTupleObject *)(args))->ob_item, \
-               ((PyTupleObject *)(args))->ob_size, types, ##rest)
+               Py_SIZE((PyTupleObject *)args), types, ##rest)
 
 #define parseArg(arg, types, rest...) \
     _parseArgs(&(arg), 1, types, ##rest)

@@ -266,14 +266,14 @@ PyObject *makeClass(PyObject *self, PyObject *args)
 
 static boxfn get_boxfn(PyTypeObject *type)
 {
-    static PyObject *boxfn_ = PyString_FromString("boxfn_");
+    static PyObject *boxfn_ = PyUnicode_FromString("boxfn_");
     PyObject *cobj = PyObject_GetAttr((PyObject *) type, boxfn_);
     boxfn fn;
     
     if (cobj == NULL)
         return NULL;
 
-    fn = (boxfn) PyCObject_AsVoidPtr(cobj);
+    fn = (boxfn) PyCapsule_GetPointer(cobj, "boxfn");
     Py_DECREF(cobj);
 
     return fn;
@@ -281,7 +281,7 @@ static boxfn get_boxfn(PyTypeObject *type)
 
 static int is_instance_of(PyObject *arg, PyTypeObject *type)
 {
-    static PyObject *class_ = PyString_FromString("class_");
+    static PyObject *class_ = PyUnicode_FromString("class_");
     PyObject *clsObj = PyObject_GetAttr((PyObject *) type, class_);
     int result;
 
@@ -300,7 +300,7 @@ static int is_instance_of(PyObject *arg, PyTypeObject *type)
 #if defined(_MSC_VER) || defined(__SUNPRO_CC)
 int __parseArgs(PyObject *args, char *types, ...)
 {
-    int count = ((PyTupleObject *)(args))->ob_size;
+    int count = Py_SIZE((PyTupleObject *)args);
     va_list list, check;
 
     va_start(list, types);
@@ -422,7 +422,7 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                       break;
 
                   if (PySequence_Check(arg) &&
-                      !PyString_Check(arg) && !PyUnicode_Check(arg))
+                      !PyBytes_Check(arg) && !PyUnicode_Check(arg))
                   {
                       if (PySequence_Length(arg) > 0)
                       {
@@ -537,7 +537,8 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
 
                   if (last)
                   {
-                      if ((PyString_Check(arg) && (PyString_Size(arg) == 1)) ||
+                      if ((PyBytes_Check(arg) && (PyBytes_Size(arg) == 1)) ||
+                          (PyUnicode_Check(arg) && (PyUnicode_GET_SIZE(arg) == 1)) ||
                           PyInt_CheckExact(arg))
                       {
                           varargs = true;
@@ -545,7 +546,8 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                       }
                   }
               }
-              else if (PyString_Check(arg) && (PyString_Size(arg) == 1))
+              else if ((PyBytes_Check(arg) && (PyBytes_Size(arg) == 1)) ||
+                       (PyUnicode_Check(arg) && (PyUnicode_GET_SIZE(arg) == 1)))
                   break;
               else if (PyInt_CheckExact(arg))
                   break;
@@ -772,14 +774,14 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                       break;
 
                   if (PySequence_Check(arg) && 
-                      !PyString_Check(arg) && !PyUnicode_Check(arg))
+                      !PyBytes_Check(arg) && !PyUnicode_Check(arg))
                   {
                       if (PySequence_Length(arg) > 0)
                       {
                           PyObject *obj = PySequence_GetItem(arg, 0);
                           int ok =
                               (obj == Py_None ||
-                               PyString_Check(obj) || PyUnicode_Check(obj));
+                               PyBytes_Check(obj) || PyUnicode_Check(obj));
 
                           Py_DECREF(obj);
                           if (ok)
@@ -790,14 +792,14 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                   } 
 
                   if (last && (arg == Py_None ||
-                               PyString_Check(arg) || PyUnicode_Check(arg)))
+                               PyBytes_Check(arg) || PyUnicode_Check(arg)))
                   {
                       varargs = true;
                       break;
                   }
               }
               else if (arg == Py_None ||
-                       PyString_Check(arg) || PyUnicode_Check(arg))
+                       PyBytes_Check(arg) || PyUnicode_Check(arg))
                   break;
 
               return -1;
@@ -822,7 +824,7 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
 
           case 'T':         /* tuple of python types with wrapfn_ */
           {
-              static PyObject *wrapfn_ = PyString_FromString("wrapfn_");
+              static PyObject *wrapfn_ = PyUnicode_FromString("wrapfn_");
               int len = va_arg(list, int);
 
               if (PyTuple_Check(arg))
@@ -1015,10 +1017,15 @@ int _parseArgs(PyObject **args, unsigned int count, char *types, ...)
                   if (PyErr_Occurred())
                       return -1;
               }
-              else if (PyString_Check(arg))
+              else if (PyBytes_Check(arg))
               {
                   jbyte *a = va_arg(list, jbyte *);
-                  *a = (jbyte) PyString_AS_STRING(arg)[0];
+                  *a = (jbyte) PyBytes_AS_STRING(arg)[0];
+              }
+              else if (PyUnicode_Check(arg))
+              {
+                  jbyte *a = va_arg(list, jbyte *);
+                  *a = (jbyte) PyUnicode_AS_UNICODE(arg)[0];
               }
               else
               {
@@ -1328,7 +1335,7 @@ PyObject *PyErr_SetArgsError(PyObject *self, char *name, PyObject *args)
 {
     if (!PyErr_Occurred())
     {
-        PyObject *type = (PyObject *) self->ob_type;
+        PyObject *type = (PyObject *) Py_TYPE(self);
         PyObject *err = Py_BuildValue("(OsO)", type, name, args);
 
         PyErr_SetObject(PyExc_InvalidArgsError, err);
@@ -1419,7 +1426,7 @@ void throwPythonError(void)
         PyObject *name = PyObject_GetAttrString(exc, "__name__");
 
         env->get_vm_env()->ThrowNew(env->getPythonExceptionClass(),
-                                    PyString_AS_STRING(name));
+                                    PyStrOrUni_AsString(name));
         Py_DECREF(name);
     }
     else
@@ -1440,7 +1447,7 @@ void throwTypeError(const char *name, PyObject *object)
 int abstract_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *err =
-        Py_BuildValue("(sO)", "instantiating java class", self->ob_type);
+        Py_BuildValue("(sO)", "instantiating java class", Py_TYPE(self));
 
     PyErr_SetObject(PyExc_NotImplementedError, err);
     Py_DECREF(err);
@@ -1463,11 +1470,7 @@ PyObject *callSuper(PyTypeObject *type, const char *name, PyObject *args,
         value = PyObject_Call(method, args, NULL);
     else
     {
-#if PY_VERSION_HEX < 0x02040000
-        PyObject *tuple = Py_BuildValue("(O)", args);
-#else
         PyObject *tuple = PyTuple_Pack(1, args);
-#endif   
         value = PyObject_Call(method, tuple, NULL);
         Py_DECREF(tuple);
     }
@@ -1480,11 +1483,7 @@ PyObject *callSuper(PyTypeObject *type, const char *name, PyObject *args,
 PyObject *callSuper(PyTypeObject *type, PyObject *self,
                     const char *name, PyObject *args, int cardinality)
 {
-#if PY_VERSION_HEX < 0x02040000
-    PyObject *tuple = Py_BuildValue("(OO)", type, self);
-#else
     PyObject *tuple = PyTuple_Pack(2, type, self);
-#endif
     PyObject *super = PyObject_Call((PyObject *) &PySuper_Type, tuple, NULL);
     PyObject *method, *value;
 
@@ -1501,11 +1500,7 @@ PyObject *callSuper(PyTypeObject *type, PyObject *self,
         value = PyObject_Call(method, args, NULL);
     else
     {
-#if PY_VERSION_HEX < 0x02040000
-        tuple = Py_BuildValue("(O)", args);
-#else
         tuple = PyTuple_Pack(1, args);
-#endif
         value = PyObject_Call(method, tuple, NULL);
         Py_DECREF(tuple);
     }
@@ -1563,7 +1558,7 @@ static bool setArrayObj(jobjectArray array, int index, PyObject *obj)
 
     if (obj == Py_None)
       jobj = NULL;
-    else if (PyString_Check(obj) || PyUnicode_Check(obj))
+    else if (PyBytes_Check(obj) || PyUnicode_Check(obj))
     {
         jobj = env->fromPyString(obj);
         deleteLocal = true;
@@ -1700,7 +1695,7 @@ void installType(PyTypeObject *type, PyObject *module, char *name,
         Py_INCREF(type);
         if (isExtension)
         {
-            type->ob_type = &PY_TYPE(FinalizerClass);
+            Py_TYPE(type) = &PY_TYPE(FinalizerClass);
             Py_INCREF(&PY_TYPE(FinalizerClass));
         }
         PyModule_AddObject(module, name, (PyObject *) type);
@@ -1709,14 +1704,14 @@ void installType(PyTypeObject *type, PyObject *module, char *name,
 
 PyObject *wrapType(PyTypeObject *type, const jobject& obj)
 {
-    static PyObject *wrapfn_ = PyString_FromString("wrapfn_");
+    static PyObject *wrapfn_ = PyUnicode_FromString("wrapfn_");
     PyObject *cobj = PyObject_GetAttr((PyObject *) type, wrapfn_);
     PyObject *(*wrapfn)(const jobject&);
     
     if (cobj == NULL)
         return NULL;
 
-    wrapfn = (PyObject *(*)(const jobject &)) PyCObject_AsVoidPtr(cobj);
+    wrapfn = (PyObject *(*)(const jobject &)) PyCapsule_GetPointer(cobj, "wrapfn");
     Py_DECREF(cobj);
 
     return wrapfn(obj);
@@ -1997,12 +1992,12 @@ int boxCharacter(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
     if (result <= 0)
         return result;
 
-    if (PyString_Check(arg))
+    if (PyBytes_Check(arg))
     {
         char *c;
         Py_ssize_t len;
 
-        if (PyString_AsStringAndSize(arg, &c, &len) < 0 || len != 1)
+        if (PyBytes_AsStringAndSize(arg, &c, &len) < 0 || len != 1)
             return -1;
 
         if (obj != NULL)
@@ -2016,7 +2011,7 @@ int boxCharacter(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
             return -1;
 
         if (obj != NULL)
-            *obj = Character((jchar) PyUnicode_AsUnicode(arg)[0]);
+            *obj = Character((jchar) PyUnicode_AS_UNICODE(arg)[0]);
     }
     else
         return -1;
@@ -2031,7 +2026,7 @@ int boxCharSequence(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
     if (result <= 0)
         return result;
 
-    if (PyString_Check(arg) || PyUnicode_Check(arg))
+    if (PyBytes_Check(arg) || PyUnicode_Check(arg))
     {
         if (obj != NULL)
         {
@@ -2285,7 +2280,7 @@ int boxString(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
     if (result <= 0)
         return result;
 
-    if (PyString_Check(arg) || PyUnicode_Check(arg))
+    if (PyBytes_Check(arg) || PyUnicode_Check(arg))
     {
         if (obj != NULL)
         {
@@ -2309,7 +2304,7 @@ int boxObject(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
 
     if (obj != NULL)
     {
-        if (PyString_Check(arg) || PyUnicode_Check(arg))
+        if (PyBytes_Check(arg) || PyUnicode_Check(arg))
         {
             *obj = p2j(arg);
             if (PyErr_Occurred())
@@ -2336,7 +2331,7 @@ int boxObject(PyTypeObject *type, PyObject *arg, java::lang::Object *obj)
         else
             return -1;
     }
-    else if (!(PyString_Check(arg) || PyUnicode_Check(arg) ||
+    else if (!(PyBytes_Check(arg) || PyUnicode_Check(arg) ||
                arg == Py_True || arg == Py_False ||
                PyInt_Check(arg) || PyLong_Check(arg) ||
                PyFloat_Check(arg)))

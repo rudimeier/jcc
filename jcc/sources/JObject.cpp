@@ -50,8 +50,7 @@ static PyGetSetDef t_JObject_properties[] = {
 };
 
 PyTypeObject PY_TYPE(JObject) = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                   /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "jcc.JObject",                       /* tp_name */
     sizeof(t_JObject),                   /* tp_basicsize */
     0,                                   /* tp_itemsize */
@@ -96,7 +95,7 @@ PyTypeObject PY_TYPE(JObject) = {
 static void t_JObject_dealloc(t_JObject *self)
 {
     self->object = JObject(NULL);
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 static PyObject *t_JObject_new(PyTypeObject *type,
@@ -157,21 +156,17 @@ static PyObject *t_JObject_str(t_JObject *self)
         }
     }
 
-    return PyString_FromString("<null>");
+    return PyUnicode_FromString("<null>");
 }
 
 static PyObject *t_JObject_repr(t_JObject *self)
 {
-    PyObject *name = PyObject_GetAttrString((PyObject *) self->ob_type,
+    PyObject *name = PyObject_GetAttrString((PyObject *) Py_TYPE(self),
                                             "__name__");
-    PyObject *str = self->ob_type->tp_str((PyObject *) self);
-#if PY_VERSION_HEX < 0x02040000
-    PyObject *args = Py_BuildValue("(OO)", name, str);
-#else
+    PyObject *str = Py_TYPE(self)->tp_str((PyObject *) self);
     PyObject *args = PyTuple_Pack(2, name, str);
-#endif
-    PyObject *format = PyString_FromString("<%s: %s>");
-    PyObject *repr = PyString_Format(format, args);
+    PyObject *format = PyUnicode_FromString("<%s: %s>");
+    PyObject *repr = PyUnicode_Format(format, args);
 
     Py_DECREF(name);
     Py_DECREF(str);
@@ -188,7 +183,7 @@ static int t_JObject_hash(t_JObject *self)
 
 static PyObject *t_JObject__getJObject(t_JObject *self, void *data)
 {
-    return PyCObject_FromVoidPtr((void *) self->object.this$, NULL);
+    return PyCapsule_New((void *) self->object.this$, "jobject", NULL);
 }
 
 #endif /* PYTHON */

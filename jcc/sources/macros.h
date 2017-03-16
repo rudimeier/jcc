@@ -68,8 +68,7 @@
 #define DECLARE_TYPE(name, t_name, base, javaClass,                         \
                      init, iter, iternext, getset, mapping, sequence)       \
 PyTypeObject PY_TYPE(name) = {                                              \
-    PyObject_HEAD_INIT(NULL)                                                \
-    /* ob_size            */   0,                                           \
+    PyVarObject_HEAD_INIT(NULL, 0)                                          \
     /* tp_name            */   #name,                                       \
     /* tp_basicsize       */   sizeof(t_name),                              \
     /* tp_itemsize        */   0,                                           \
@@ -163,31 +162,23 @@ PyObject *t_name::wrap_jobject(const jobject& object)                   \
     }
 
 
-#if PY_VERSION_HEX < 0x02040000
+#if PY_MAJOR_VERSION < 3
 
-#define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
-#define Py_RETURN_TRUE return Py_INCREF(Py_True), Py_True
-#define Py_RETURN_FALSE return Py_INCREF(Py_False), Py_False
+#define PyStrOrUni_Check            PyString_Check
+#define PyStrOrUni_AsString         PyString_AsString
 
-#define Py_CLEAR(op)                            \
-    do {                                        \
-        if (op) {                               \
-            PyObject *tmp = (PyObject *)(op);   \
-            (op) = NULL;                        \
-            Py_DECREF(tmp);                     \
-        }                                       \
-    } while (0)
+#else /* PY_MAJOR_VERSION < 3 */
 
-#define Py_VISIT(op)                                    \
-    do {                                                \
-        if (op) {                                       \
-            int vret = visit((PyObject *)(op), arg);    \
-            if (vret)                                   \
-                return vret;                            \
-        }                                               \
-    } while (0)
-          
-#endif /* Python 2.3.5 */
+#define PyStrOrUni_Check            PyUnicode_Check
+#define PyStrOrUni_AsString         PyUnicode_AsUTF8
+
+#define PyInt_AsLong                PyLong_AsLong
+#define PyInt_AS_LONG               PyLong_AS_LONG
+#define PyInt_Check                 PyLong_Check
+#define PyInt_CheckExact            PyLong_CheckExact
+#define PyInt_FromLong              PyLong_FromLong
+
+#endif /* PY_MAJOR_VERSION < 3 */
 
 
 #endif /* _macros_H */

@@ -17,11 +17,9 @@
 
 #ifdef PYTHON
 #include <Python.h>
+#include <bytesobject.h>
 #include "macros.h"
 
-#if PY_VERSION_HEX < 0x02050000
-typedef int Py_ssize_t;
-#endif
 
 extern jobjectArray fromPySequence(jclass cls, PyObject *sequence);
 extern jobjectArray fromPySequence(jclass cls, PyObject **args, int length);
@@ -199,7 +197,7 @@ template<> class JArray<jobject> : public java::lang::Object {
             {
                 jobject jobj;
 
-                if (PyString_Check(obj) || PyUnicode_Check(obj))
+                if (PyBytes_Check(obj) || PyUnicode_Check(obj))
                     jobj = env->fromPyString(obj);
                 else if (!PyObject_TypeCheck(obj, &PY_TYPE(JObject)))
                 {
@@ -567,8 +565,13 @@ template<> class JArray<jbyte> : public java::lang::Object {
         arrayElements elts = elements();
         jbyte *buf = (jbyte *) elts;
 
-        if (PyString_Check(sequence))
-            memcpy(buf, PyString_AS_STRING(sequence), length);
+        if (PyBytes_Check(sequence))
+            memcpy(buf, PyBytes_AS_STRING(sequence), length);
+/* there is no PyUnicode_AsUTF8 on python2 */
+#if PY_MAJOR_VERSION >= 3
+        else if (PyUnicode_Check(sequence))
+            memcpy(buf, PyUnicode_AsUTF8(sequence), length);
+#endif
         else
             for (Py_ssize_t i = 0; i < length; i++) {
                 PyObject *obj = PySequence_GetItem(sequence, i);
@@ -576,9 +579,14 @@ template<> class JArray<jbyte> : public java::lang::Object {
                 if (!obj)
                     break;
 
-                if (PyString_Check(obj) && (PyString_GET_SIZE(obj) == 1))
+                if (PyBytes_Check(obj) && (PyBytes_GET_SIZE(obj) == 1))
                 {
-                    buf[i] = (jbyte) PyString_AS_STRING(obj)[0];
+                    buf[i] = (jbyte) PyBytes_AS_STRING(obj)[0];
+                    Py_DECREF(obj);
+                }
+                else if (PyUnicode_Check(obj) && (PyUnicode_GET_SIZE(obj) == 1))
+                {
+                    buf[i] = (jbyte) PyUnicode_AS_UNICODE(obj)[0];
                     Py_DECREF(obj);
                 }
                 else if (PyInt_CheckExact(obj))
@@ -605,8 +613,10 @@ template<> class JArray<jbyte> : public java::lang::Object {
             if (!obj)
                 break;
 
-            if (PyString_Check(obj) && (PyString_GET_SIZE(obj) == 1))
-                buf[i] = (jbyte) PyString_AS_STRING(obj)[0];
+            if (PyBytes_Check(obj) && (PyBytes_GET_SIZE(obj) == 1))
+                buf[i] = (jbyte) PyBytes_AS_STRING(obj)[0];
+            else if (PyUnicode_Check(obj) && (PyUnicode_GET_SIZE(obj) == 1))
+                buf[i] = (jbyte) PyUnicode_AS_UNICODE(obj)[0];
             else if (PyInt_CheckExact(obj))
                 buf[i] = (jbyte) PyInt_AS_LONG(obj);
             else
@@ -650,6 +660,17 @@ template<> class JArray<jbyte> : public java::lang::Object {
         return tuple;
     }
 
+    PyObject *to_bytes_()
+    {
+        if (this$ == NULL)
+            Py_RETURN_NONE;
+
+        arrayElements elts = elements();
+        jbyte *buf = (jbyte *) elts;
+
+        return PyBytes_FromStringAndSize((char *) buf, length);
+    }
+
     PyObject *to_string_()
     {
         if (this$ == NULL)
@@ -658,7 +679,11 @@ template<> class JArray<jbyte> : public java::lang::Object {
         arrayElements elts = elements();
         jbyte *buf = (jbyte *) elts;
 
+#if PY_MAJOR_VERSION < 3
         return PyString_FromStringAndSize((char *) buf, length);
+#else
+        return PyUnicode_FromStringAndSize((char *) buf, length);
+#endif
     }
 
     PyObject *get(Py_ssize_t n)
