@@ -194,11 +194,11 @@ static PyObject *t_jccenv_isShared(PyObject *self)
 
 static PyObject *t_jccenv_strhash(PyObject *self, PyObject *arg)
 {
-    long hash = PyObject_Hash(arg);
-    size_t hexdig = sizeof(long) * 2;
+    unsigned long hash = (unsigned long)PyObject_Hash(arg);
+    static const size_t hexdig = sizeof(hash) * 2;
     char buffer[hexdig + 1];
 
-    sprintf(buffer, "%0*lx", (int)hexdig, (unsigned long)hash);
+    sprintf(buffer, "%0*lx", (int)hexdig, hash);
     return PyUnicode_FromStringAndSize(buffer, hexdig);
 }
 
