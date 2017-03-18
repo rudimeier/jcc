@@ -1,0 +1,103 @@
+language: python
+
+dist: trusty
+sudo: required
+
+os:
+  - linux
+
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "3.7-dev"
+
+env:
+  matrix:
+    - TESTJDK="openjdk7"
+    # bad javac ...
+    #- TESTJDK="openjdk8"
+    # cannot find -ljava
+    #- TESTJDK="oraclejdk"
+
+matrix:
+  include:
+    # Add OSX builds separately because they don't support "language: python"
+    # and also have  no jdk_switcher. Just using OSX defaults there ...
+#    - language: java
+#      os: osx
+#      osx_image: xcode6.4
+#      python: "dflt"
+#      env: TESTJDK="OSX 10.10 default" OSX_PY="2"
+    - language: java
+      os: osx
+      osx_image: xcode7.3
+      python: "dflt"
+      env: TESTJDK="OSX 10.11 default" OSX_PY="2"
+    - language: java
+      os: osx
+      osx_image: xcode8
+      python: "dflt"
+      env: TESTJDK="OSX 10.11 default" OSX_PY="2"
+#    - language: java
+#      os: osx
+#      osx_image: xcode8.1
+#      python: "dflt"
+#      env: TESTJDK="OSX 10.12 default" OSX_PY="2"
+    - language: java
+      os: osx
+      osx_image: xcode8.2
+      python: "dflt"
+      env: TESTJDK="OSX 10.12 default" OSX_PY="2"
+#    - language: java
+#      os: osx
+#      osx_image: xcode6.4
+#      python: "dflt"
+#      env: TESTJDK="OSX 10.10 default" OSX_PY="3"
+    - language: java
+      os: osx
+      osx_image: xcode7.3
+      python: "dflt"
+      env: TESTJDK="OSX 10.11 default" OSX_PY="3"
+    - language: java
+      os: osx
+      osx_image: xcode8
+      python: "dflt"
+      env: TESTJDK="OSX 10.11 default" OSX_PY="3"
+#    - language: java
+#      os: osx
+#      osx_image: xcode8.1
+#      python: "dflt"
+#      env: TESTJDK="OSX 10.12 default" OSX_PY="3"
+    - language: java
+      os: osx
+      osx_image: xcode8.2
+      python: "dflt"
+      env: TESTJDK="OSX 10.12 default" OSX_PY="3"
+    # add other jdk versions
+    - python: "2.7"
+      env: TESTJDK="openjdk6"
+    - python: "2.7"
+      env: TESTJDK="oraclejdk7"
+    - python: "2.7"
+      env: TESTJDK="oraclejdk8"
+    - python: "3.6"
+      env: TESTJDK="openjdk6"
+    - python: "3.6"
+      env: TESTJDK="oraclejdk7"
+    - python: "3.6"
+      env: TESTJDK="oraclejdk8"
+
+
+install:
+  - source ./.travis-functions.sh
+  - travis_have_sudo
+  - travis_jdk_switcher
+  - travis_show_env
+  - travis_install_script
+
+script:
+  - travis_script
+
