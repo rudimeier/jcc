@@ -1822,6 +1822,9 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
 
     if shared:
         shlibdir = os.path.dirname(os.path.dirname(_jcc.__file__))
+        import sysconfig
+        soabi = sysconfig.get_config_var('SOABI')
+        libjcc = 'jcc.'+soabi if soabi else 'jcc'
         if sys.platform == 'darwin':   # distutils no good with -R
             machine = platform.machine()
             if machine.startswith('iPod') or machine.startswith('iPhone'):
@@ -1829,11 +1832,8 @@ def compile(env, jccPath, output, moduleName, install, dist, debug, jars,
             else:
                 args['extra_link_args'] += ['-Wl,-rpath', shlibdir]
             args['library_dirs'] = [shlibdir]
-            args['libraries'] = ['jcc']
+            args['libraries'] = [libjcc]
         elif sys.platform.startswith('linux'): # distutils no good with -R
-            from setuptools.command.build_ext import _CONFIG_VARS
-            soabi = _CONFIG_VARS.get('SOABI', '')
-            libjcc = 'jcc.'+soabi if soabi else 'jcc'
             args['extra_link_args'] += ['-Wl,-rpath', shlibdir]
             args['library_dirs'] = [shlibdir]
             args['libraries'] = [libjcc]
