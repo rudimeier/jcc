@@ -76,14 +76,14 @@ function travis_build_java
 
 function travis_build_python
 {
-	echo "xxxxxxxxxxxxxxxxxxxxx"
+	echo "######## begin version info ########"
 	python --version
 	java -version
 	javac -version
 	echo "$JAVA_HOME"
 	echo "$JAVA_BINDIR"
 	echo "$JAVA_ROOT"
-	echo "yyyyyyyyyyyyyyyyyyyyy"
+	echo "######## end version info   ########"
 
 	# build jcc
 	JCC_JDK="$JAVA_HOME" python setup.py install || return
@@ -102,7 +102,6 @@ function travis_build_python
 
 	python --version
 	python -m jcc --jar "$curdir/test/hello.jar" \
-	       --shared \
 	       --python hellojcc \
 	       --version 1.2.3 \
 	       --build \
