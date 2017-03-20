@@ -489,7 +489,7 @@ _DLL_EXPORT PyObject *initVM(PyObject *self, PyObject *args, PyObject *kwds)
 
                 if (PyStrOrUni_Check(arg))
                 {
-                    char *option = PyStrOrUni_AsString(arg);
+                    const char *option = PyStrOrUni_AsString(arg);
 
                     if (nOptions < sizeof(vm_options) / sizeof(JavaVMOption))
                         add_option("", option, &vm_options[nOptions++]);
